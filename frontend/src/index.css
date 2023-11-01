@@ -11,3 +11,98 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.box {
+  height: 676px;
+  width: 884px;
+}
+
+.box .maxshirko-me {
+  border: 5px solid;
+  border-color: #ffffff4c;
+  height: 676px;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 884px;
+}
+
+.box .element {
+  height: 584px;
+  left: 18px;
+  position: relative;
+  top: 41px;
+  width: 842px;
+}
+
+.box .overlap {
+  background-color: #222222;
+  border-radius: 30px;
+  height: 584px;
+  position: relative;
+  width: 838px;
+}
+
+.box .text-wrapper {
+  color: #ffc700;
+  font-family: "Zen Maru Gothic-Regular", Helvetica;
+  font-size: 56px;
+  font-weight: 400;
+  left: 356px;
+  letter-spacing: -2.24px;
+  line-height: 57px;
+  position: absolute;
+  top: 99px;
+  width: 482px;
+}
+
+.box .group {
+  height: 43px;
+  left: 230px;
+  position: absolute;
+  top: 292px;
+  width: 379px;
+}
+
+.box .overlap-group {
+  height: 43px;
+  position: relative;
+  width: 377px;
+}
+
+.box .rectangle {
+  background-color: #ffffff;
+  border-radius: 50px;
+  height: 41px;
+  left: 3px;
+  position: absolute;
+  top: 2px;
+  width: 374px;
+}
+
+.box .div {
+  color: #767373;
+  font-family: "Zen Maru Gothic-Black", Helvetica;
+  font-size: 16px;
+  font-weight: 900;
+  height: 41px;
+  left: 0;
+  letter-spacing: 0;
+  line-height: normal;
+  position: absolute;
+  text-align: center;
+  top: 0;
+  width: 374px;
+}
+
+.box .whatever-description {
+  color: #ffc700;
+  font-family: "Zen Maru Gothic-Medium", Helvetica;
+  font-size: 20px;
+  font-weight: 500;
+  left: 50px;
+  letter-spacing: 0;
+  line-height: normal;
+  position: absolute;
+  top: 447px;
+  width: 502px;
+}

@@ -1,10 +1,10 @@
 import React from "react";
-import "./style.css";
+import "./index.css";
 
-export const Box = () => {
+function Login () {
+        // TODO: maxshirko-me
   return (
     <div className="box">
-        // TODO: change me
       <div className="maxshirko-me">
         <div className="element">
           <div className="overlap">
@@ -27,4 +27,6 @@ export const Box = () => {
       </div>
     </div>
   );
-};
+}
+
+export default Login;
