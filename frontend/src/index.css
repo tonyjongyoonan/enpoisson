@@ -1,108 +1,80 @@
-body {
+* {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-.box {
-  height: 676px;
-  width: 884px;
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  /* background: url(' sumn? ') no-repeat; */
+  background-position: center;
 }
 
-.box .maxshirko-me {
-  border: 5px solid;
-  border-color: #ffffff4c;
-  height: 676px;
-  left: 0;
+header {
   position: fixed;
   top: 0;
-  width: 884px;
-}
-
-.box .element {
-  height: 584px;
-  left: 18px;
-  position: relative;
-  top: 41px;
-  width: 842px;
-}
-
-.box .overlap {
-  background-color: #222222;
-  border-radius: 30px;
-  height: 584px;
-  position: relative;
-  width: 838px;
-}
-
-.box .text-wrapper {
-  color: #ffc700;
-  font-family: "Zen Maru Gothic-Regular", Helvetica;
-  font-size: 56px;
-  font-weight: 400;
-  left: 356px;
-  letter-spacing: -2.24px;
-  line-height: 57px;
-  position: absolute;
-  top: 99px;
-  width: 482px;
-}
-
-.box .group {
-  height: 43px;
-  left: 230px;
-  position: absolute;
-  top: 292px;
-  width: 379px;
-}
-
-.box .overlap-group {
-  height: 43px;
-  position: relative;
-  width: 377px;
-}
-
-.box .rectangle {
-  background-color: #ffffff;
-  border-radius: 50px;
-  height: 41px;
-  left: 3px;
-  position: absolute;
-  top: 2px;
-  width: 374px;
-}
-
-.box .div {
-  color: #767373;
-  font-family: "Zen Maru Gothic-Black", Helvetica;
-  font-size: 16px;
-  font-weight: 900;
-  height: 41px;
   left: 0;
-  letter-spacing: 0;
-  line-height: normal;
-  position: absolute;
-  text-align: center;
-  top: 0;
-  width: 374px;
+  width: 100%;
+  padding: 20px 100px;
+  background: #4D4D4D;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 99;
 }
 
-.box .whatever-description {
-  color: #ffc700;
-  font-family: "Zen Maru Gothic-Medium", Helvetica;
-  font-size: 20px;
-  font-weight: 500;
-  left: 50px;
-  letter-spacing: 0;
-  line-height: normal;
-  position: absolute;
-  top: 447px;
-  width: 502px;
+.logo {
+  font-size: 2em;
+  color: #fff;
+  user-select: none;
 }
+
+.navigation a {
+  position: relative;
+  font-size: 1.1em;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 40px;
+}
+
+.navigation a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 3px;
+  background: #4D4D4D;
+  border-radius: 5px;
+  transform-origin: right;
+  transform: scaleX(0);
+  transition: transform .5s;
+}
+
+.navigation a:hover::after {
+  transform-origin: left;
+  transform: scaleX(1);
+}
+
+.navigation .btnLogin-popup {
+  width: 130px;
+  height: 50px;
+  background: transparent;
+  border: 2px solid #fff;
+  outline: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1em;
+  color: #fff;
+  font-weight: 500;
+  margin-left: 40px;
+}
+
+/* .navigation .btnLogin-popup:hover {
+
+} */
