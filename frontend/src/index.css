@@ -49,7 +49,7 @@ header {
   bottom: -6px;
   width: 100%;
   height: 3px;
-  background: #4D4D4D;
+  background: #fff;
   border-radius: 5px;
   transform-origin: right;
   transform: scaleX(0);
