@@ -3,6 +3,114 @@ from stockfish import Stockfish
 import chess
 
 
+def bishop_attack(board, square, color):
+    # returns True if SQUARE is attacked by opposing color bishop
+    # NOTE: this function does not check if the square is occupied by a piece
+    # TODO: actually write this. Need to be careful because bishop can be obstructed by another piece
+    # may be worthwhile to have an x-ray bishop function
+
+def knight_attack(board, square, color):
+    # returns True if SQUARE is attacked by opposing color knight
+    # NOTE: this function does not check if the square is occupied by a piece
+    if (color == chess.WHITE):
+        if (board.piece_at(square+17) != None):
+            if (board.piece_at(square+17).symbol() == "n"):
+                return True
+        if (board.piece_at(square+15) != None):
+            if (board.piece_at(square+15).symbol() == "n"):
+                return True
+        if (board.piece_at(square+10) != None):
+            if (board.piece_at(square+10).symbol() == "n"):
+                return True
+        if (board.piece_at(square+6) != None):
+            if (board.piece_at(square+6).symbol() == "n"):
+                return True
+        if (board.piece_at(square-17) != None):
+            if (board.piece_at(square-17).symbol() == "n"):
+                return True
+        if (board.piece_at(square-15) != None):
+            if (board.piece_at(square-15).symbol() == "n"):
+                return True
+        if (board.piece_at(square-10) != None):
+            if (board.piece_at(square-10).symbol() == "n"):
+                return True
+        if (board.piece_at(square-6) != None):
+            if (board.piece_at(square-6).symbol() == "n"):
+                return True
+    else:
+        if (board.piece_at(square+17) != None):
+            if (board.piece_at(square+17).symbol() == "N"):
+                return True
+        if (board.piece_at(square+15) != None):
+            if (board.piece_at(square+15).symbol() == "N"):
+                return True
+        if (board.piece_at(square+10) != None):
+            if (board.piece_at(square+10).symbol() == "N"):
+                return True
+        if (board.piece_at(square+6) != None):
+            if (board.piece_at(square+6).symbol() == "N"):
+                return True
+        if (board.piece_at(square-17) != None):
+            if (board.piece_at(square-17).symbol() == "N"):
+                return True
+        if (board.piece_at(square-15) != None):
+            if (board.piece_at(square-15).symbol() == "N"):
+                return True
+        if (board.piece_at(square-10) != None):
+            if (board.piece_at(square-10).symbol() == "N"):
+                return True
+        if (board.piece_at(square-6) != None):
+            if (board.piece_at(square-6).symbol() == "N"):
+                return True
+    return False
+
+
+def pawn_attack(board, square, color):
+    # returns True if SQUARE is attacked by opposing color pawn
+    # NOTE: this function does not check if the square is occupied by a piece
+    if (color == chess.WHITE):
+        if (board.piece_at(square+9) != None):
+            if (board.piece_at(square+9).symbol() == "p"):
+                return True
+        if (board.piece_at(square+7) != None):
+            if (board.piece_at(square+7).symbol() == "p"):
+                return True
+    else:
+        if (board.piece_at(square-9) != None):
+            if (board.piece_at(square-9).symbol() == "P"):
+                return True
+        if (board.piece_at(square-7) != None):
+            if (board.piece_at(square-7).symbol() == "P"):
+                return True
+    return False
+
+
+def count_black_double_pawns(board):
+    double_pawns_count = 0
+    for i in range(8):
+        # count number of pawns in column i
+        pawns_in_column = 0
+        for j in range(8):
+            if (board.piece_at(i+j*8) != None):
+                if (board.piece_at(i+j*8).symbol() == "p"):
+                    pawns_in_column += 1
+        if (pawns_in_column >= 2):
+            double_pawns_count += 1
+    return double_pawns_count
+
+def count_white_double_pawns(board):
+    double_pawns_count = 0
+    for i in range(8):
+        # count number of pawns in column i
+        pawns_in_column = 0
+        for j in range(8):
+            if (board.piece_at(i+j*8) != None):
+                if (board.piece_at(i+j*8).symbol() == "P"):
+                    pawns_in_column += 1
+        if (pawns_in_column >= 2):
+            double_pawns_count += 1
+    return double_pawns_count
+
 def king_pawn_distance(board):
     # find minimum distance between white king and white pawns
     white_king_square = board.king(chess.WHITE)
@@ -71,8 +179,9 @@ def material_count(board):
 
 stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
 # read first game in ruy_lopezes.txt
-pgn = open("lichess_db_standard_rated_2017-02.pgn")
+pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
 game = chess.pgn.read_game(pgn)
+
 move_list = list(game.mainline_moves())
 stockfish.set_position(move_list)
 board = chess.Board()
@@ -81,5 +190,11 @@ for i in move_list:
 print(board)
 print(stockfish.get_board_visual())
 print(material_count(board))
+print(white_has_bishop_pair(board))
+print(black_has_bishop_pair(board))
 print(king_pawn_distance(board))
+print(count_white_double_pawns(board))
+print(count_black_double_pawns(board))
+print(pawn_attack(board, chess.G8, chess.BLACK))
+print(knight_attack(board, chess.G5, chess.WHITE))
 # print(material_count(stockfish.board()))
