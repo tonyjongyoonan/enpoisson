@@ -1,16 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Zen Maru Gothic', sans-serif;
 }
+
+
 
 body {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #28282B;
+  background: #222222;
   background-position: center;
 }
 
@@ -28,14 +32,14 @@ header {
 
 .logo {
   font-size: 2em;
-  color: #fff;
+  color: #ffc703;
   user-select: none;
 }
 
 .navigation a {
   position: relative;
   font-size: 1.1em;
-  color: #fff;
+  color: #ffc703;
   text-decoration: none;
   font-weight: 500;
   margin-left: 40px;
@@ -48,7 +52,7 @@ header {
   bottom: -6px;
   width: 100%;
   height: 3px;
-  background: #fff;
+  background: #ffc703;
   border-radius: 5px;
   transform-origin: right;
   transform: scaleX(0);
@@ -64,19 +68,19 @@ header {
   width: 130px;
   height: 50px;
   background: transparent;
-  border: 2px solid #fff;
+  border: 2px solid #ffc703;
   outline: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1.1em;
-  color: #fff;
+  color: #ffc703;
   font-weight: 500;
   margin-left: 40px;
 }
 
 .navigation .btnLogin-popup:hover {
-  background: #fff;
-  color: #fff;
+  background: #ffc703;
+  color: #222222;
 }
 
 .wrapper {
@@ -85,7 +89,7 @@ header {
   background: transparent;
   border: 2px solid rgba(255, 255, 255, 0.5);
   border-radius: 20px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(100px);
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
@@ -100,7 +104,7 @@ header {
 /* login header */
 .form-box h2 {
   font-size: 2em;
-  color: #fff;
+  color: #ffc703;
   text-align: center;
 }
   
@@ -108,7 +112,7 @@ header {
   position: relative;
   width: 100%;
   height: 50px;
-  border-bottom: 2px solid #fff;
+  border-bottom: 2px solid #ffc703;
   margin: 30px 0;
 }
 
@@ -118,7 +122,7 @@ header {
   left: 5px;
   transform: translateY(-50%);
   font-size: 1em;
-  color: #fff;
+  color: #ffc703;
   font-weight: 500;
   pointer-events: none;
 }
@@ -134,13 +138,13 @@ header {
   border: none;
   outline: none;
   font-size: 1em;
-  color: #fff;
+  color: #ffc703;
 }
 
 .input-box .icon {
   position: absolute;
   right: 8px;
   font-size: 1em;
-  color: #fff;
+  color: #ffc703;
   line-height: 57px;
 }
