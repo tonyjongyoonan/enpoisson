@@ -9,7 +9,6 @@
   font-family: 'Zen Maru Gothic', sans-serif;
 }
 
-
 body {
   display: flex;
   justify-content: center;
@@ -48,15 +47,10 @@ header {
     height: 100%;
     display: flex;
     align-items: center;
-    padding-left: 25px;
-}
-
-.Navbar .leftSide img {
-    width: 35px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    margin-right: 50px;
+    padding-left: 10px;
+    color: #ffc703;
+    font-size: 1.1em;
+    font-weight: 1000;
 }
 
 .Navbar a {
