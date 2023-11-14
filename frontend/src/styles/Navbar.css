@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@300;500&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Zen Maru Gothic', sans-serif;
+}
+
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #222222;
+  background-position: center;
+}
+
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 100px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 99;
+}
+
+.Navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 20px 100px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    z-index: 99;
+}
+
+.Navbar .leftSide {
+    flex: 50%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding-left: 25px;
+}
+
+.Navbar .leftSide img {
+    width: 35px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    margin-right: 50px;
+}
+
+.Navbar a {
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  font-size: 1.1em;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 1000;
+  margin-left: 40px;
+}
+
+.Navbar a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 100%;
+  height: 3px;
+  background: #ffc703;
+  border-radius: 5px;
+  transform-origin: right;
+  transform: scaleX(0);
+  transition: transform .5s;
+}
+
+.Navbar a:hover::after {
+  transform-origin: left;
+  transform: scaleX(1);
+}
+
+.Navbar .btnLogin-popup {
+  width: 110px;
+  height: 45px;
+  background: transparent;
+  border: 2px solid #ffc703;
+  outline: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1em;
+  color: #ffc703;
+  font-weight: 400;
+  margin-left: 40px;
+}
+
+.Navbar .btnLogin-popup:hover {
+  background: #ffc703;
+  color: #222222;
+}
+
