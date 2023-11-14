@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-"""This is a baseline model that takes in"""
+"""This is a baseline model that takes in hueristics as 
+features of the board state as our main input."""
 class MyModel(nn.Module):
     def __init__(self):
         super(MyModel, self).__init__()
