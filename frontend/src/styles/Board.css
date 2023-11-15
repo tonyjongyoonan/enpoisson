@@ -1,14 +1,31 @@
+:root {
+    --tile-size: 70px;
+    --bg-color : #202020;
+    --highlight : rgba(0,0,0,.1);
+    --check : #FEEC48;
+}
+
+@media all and (max-width: 450px) {
+    :root {
+        --tile-size : 100px;
+    }
+}
+
 .board {
-    color: #fff;
+    display: grid;
+    position: relative;
+    grid-template-columns: calc(.25*var(--tile-size)) calc(8*var(--tile-size));
 }
 
 .tiles {
     display: grid;
-    color: #fff;
     grid-template-columns: repeat(8, var(--tile-size));
     grid-template-rows: repeat(8, var(--tile-size));
     width: calc(8 * var(--tile-size));
-    --tile-size: 50px;
+}
+
+.tile {
+    position: relative;
 }
 
 .tile-light {

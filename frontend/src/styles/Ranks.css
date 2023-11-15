@@ -1,0 +1,9 @@
+.ranks {
+    color : #769954;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    font-size: 0.7rem;
+    margin-right: 5px;
+}
