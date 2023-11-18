@@ -3,8 +3,8 @@ Senior Design Project: We want to address current shortcomings in chess educatio
 
  
 ## Team
-Tony An, CIS '24
-Nathaniel Lao, CIS '24
-Ishaan Lal, CIS '24
-Andrew Jiang, CIS '24
-Joseph Lee, NETS '24
+Tony An (CIS '24), 
+Nathaniel Lao (CIS '24), 
+Ishaan Lal (CIS '24), 
+Andrew Jiang (CIS '24),
+Joseph Lee (NETS '24)
