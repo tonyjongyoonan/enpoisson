@@ -14,6 +14,7 @@ print(ruylopez.get_board_visual())
 stockfish2 = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
 
 pgn = open("lichess_db_standard_rated_2017-02.pgn")
+# pgn = open("single_game.pgn")
 game = chess.pgn.read_game(pgn)
 
 for i in range(8000):

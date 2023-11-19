@@ -2,12 +2,57 @@ import chess.pgn
 from stockfish import Stockfish
 import chess
 
+def is_passed_pawn_black(board, row, column): 
+    for i in range(row-1, -1, -1):
+        if (board.piece_at(i*8+(column-1)) != None):
+            if (board.piece_at(i*8+(column-1)).symbol() == "P"):
+                return False
+    for i in range(row-1, -1, -1):
+        if (board.piece_at(i*8+(column+1)) != None):
+            if (board.piece_at(i*8+(column+1)).symbol() == "P"):
+                return False
+    return True
+
+def is_passed_pawn_white(board, row, column):
+    # returns True if SQUARE is a passed pawn for COLOR
+    for i in range(row+1, 8):
+        if (board.piece_at(i*8+(column-1)) != None):
+            if (board.piece_at(i*8+(column-1)).symbol() == "p"):
+                return False
+    for i in range(row+1, 8):
+        if (board.piece_at(i*8+(column+1)) != None):
+            if (board.piece_at(i*8+(column+1)).symbol() == "p"):
+                return False
+    return True
+
+
+def count_passed_pawn(board, color):
+    # returns number of passed pawns for COLOR
+    for i in range(8):
+        # count number of pawns in column i
+        passed_pawns = 0
+        for j in range(8):
+            if (board.piece_at(i*8+j) != None and color == chess.BLACK):
+                if (board.piece_at(i*8+j).symbol() == "p"):
+                    print(i, " ", j)
+                    # TODO: fix last argument.
+                    if (is_passed_pawn_black(board, i, j)):
+                        passed_pawns += 1
+            elif (board.piece_at(i*8+j) != None and color == chess.WHITE):
+                if (board.piece_at(i*8+j).symbol() == "P"):
+                    print(i, " ", j)
+                    if (is_passed_pawn_white(board, i, j)):
+                        passed_pawns += 1
+    return passed_pawns
+
+
 
 def bishop_attack(board, square, color):
     # returns True if SQUARE is attacked by opposing color bishop
     # NOTE: this function does not check if the square is occupied by a piece
     # TODO: actually write this. Need to be careful because bishop can be obstructed by another piece
     # may be worthwhile to have an x-ray bishop function
+    return
 
 def knight_attack(board, square, color):
     # returns True if SQUARE is attacked by opposing color knight
@@ -179,7 +224,8 @@ def material_count(board):
 
 stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
 # read first game in ruy_lopezes.txt
-pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
+# pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
+pgn = open("single_game.pgn")
 game = chess.pgn.read_game(pgn)
 
 move_list = list(game.mainline_moves())
@@ -197,4 +243,5 @@ print(count_white_double_pawns(board))
 print(count_black_double_pawns(board))
 print(pawn_attack(board, chess.G8, chess.BLACK))
 print(knight_attack(board, chess.G5, chess.WHITE))
+print(count_passed_pawn(board, chess.WHITE))
 # print(material_count(stockfish.board()))
