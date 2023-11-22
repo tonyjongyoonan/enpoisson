@@ -128,6 +128,8 @@ def pawn_attack(board, square, color):
     return False
 
 def knight_control(board, square, color):
+    # NOTE: can enhance by ignoring certain squares if they are occupied by friendly pieces
+    # for example, stockfish does not add 1 if the square is occupied by the color's queen
     piece = "N" if color == chess.WHITE else "n"
 
     count = 0
@@ -177,6 +179,112 @@ def pawn_control(board, square, color):
                 count += 1
     return count
 
+def king_control(board, square, color):
+    # returns True if SQUARE is controlled by opposing color king
+    # NOTE: this function does not check if the square is occupied by a piece
+    piece = "K" if color == chess.WHITE else "k"
+
+    if (get_column(square) <= 6 and board.piece_at(square+1) != None):
+        if (board.piece_at(square+1).symbol() == piece):
+            return 1
+    if (get_column(square) >= 1 and board.piece_at(square-1) != None):
+        if (board.piece_at(square-1).symbol() == piece):
+            return 1
+    if (get_row(square) <= 6 and board.piece_at(square+8) != None):
+        if (board.piece_at(square+8).symbol() == piece):
+            return 1
+    if (get_row(square) >= 1 and board.piece_at(square-8) != None):
+        if (board.piece_at(square-8).symbol() == piece):
+            return 1
+    if (get_column(square) <= 6 and get_row(square) <= 6 and board.piece_at(square+9) != None):
+        if (board.piece_at(square+9).symbol() == piece):
+            return 1
+    if (get_column(square) >= 1 and get_row(square) <= 6 and board.piece_at(square+7) != None):
+        if (board.piece_at(square+7).symbol() == piece):
+            return 1
+    if (get_column(square) >= 1 and get_row(square) >= 1 and board.piece_at(square-9) != None):
+        if (board.piece_at(square-9).symbol() == piece):
+            return 1
+    if (get_column(square) <= 6 and get_row(square) >= 1 and board.piece_at(square-7) != None):
+        if (board.piece_at(square-7).symbol() == piece):
+            return 1
+    return 0
+
+#TODO: Check if this function actually works as intended
+def bishop_xray_control(board, square, color):
+    # returns True if SQUARE is controlled by opposing color bishop
+    symbol = "B" if color == chess.WHITE else "b"
+    v = 0
+    for i in range(4):
+        ix = ((i > 1) * 2) - 1
+        iy = ((i %2 == 0) * 2) - 1
+        for d in range(1, 8):
+            if (get_column(square) + d * ix <= 7) and \
+                        (get_column(square) + d * ix >= 0) and \
+                        (get_row(square) + d * iy <= 7) and \
+                        (get_row(square) + d * iy >= 0):
+                b = board.piece_at(square + d * ix + d * iy * 8)
+                if b is not None:
+                    if b.symbol() == symbol:
+                        dir = pinned_direction(board, square + d * ix + d * iy * 8)
+                        if (dir == 0 or abs(ix + iy * 3) == dir):
+                            v += 1
+                if b is not None and b.symbol() != "Q" and b.symbol() != "q":
+                    break
+    return v
+
+def rook_xray_control(board, square, color):
+    symbol = "R" if color == chess.WHITE else "r"
+    v = 0
+    for i in range(4):
+        ix = 0
+        if i == 0:
+            ix = -1
+        elif i == 1:
+            ix = 1
+        iy = 0
+        if i == 2:
+            iy = -1
+        elif i == 3:
+            iy = 1
+        for d in range(1, 8):
+            if (get_column(square) + d * ix <= 7) and \
+                    (get_column(square) + d * ix >= 0) and \
+                    (get_row(square) + d * iy <= 7) and \
+                    (get_row(square) + d * iy >= 0):
+
+                b = board.piece_at(square + d * ix + d * iy * 8)
+                if b is not None:
+                    if b.symbol() == symbol:
+                        dir = pinned_direction(board, square + d * ix + d * iy * 8)
+                        if (dir == 0 or abs(ix + iy * 3) == dir):
+                            v += 1
+                if b is not None and b.symbol() != "Q" and b.symbol() != "q" and b.symbol() != symbol:
+                    break
+    return v
+
+def queen_control(board, square, color):
+    v = 0
+    for i in range(8):
+        ix = (i + (i > 3)) % 3 - 1
+        iy = (((i + (i > 3)) // 3)) - 1
+        for d in range(1, 8):
+            if (get_column(square) + d * ix <= 7) and \
+                    (get_column(square) + d * ix >= 0) and \
+                    (get_row(square) + d * iy <= 7) and \
+                    (get_row(square) + d * iy >= 0): 
+                b = board.piece_at(square + d * ix + d * iy * 8)
+                if b is not None:
+                    if b.symbol() == "Q":
+                        dir = pinned_direction(board, square + d * ix + d * iy * 8)
+                        if (dir == 0 or abs(ix + iy * 3) == dir):
+                            v += 1
+                if b is not None:
+                    break
+    return v
+
+
+
 def total_control(board, color):
     s = ""
     for i in range(8):
@@ -185,10 +293,102 @@ def total_control(board, color):
             count = 0
             count += knight_control(board, i*8+j, color)
             count += pawn_control(board, i*8+j, color)
+            count += king_control(board, i*8+j, color)
+            count += bishop_xray_control(board, i*8+j, color)
+            count += rook_xray_control(board, i*8+j, color)
+            count += queen_control(board, i*8+j, color)
             # print("Total control for ", color, " at square ", i*8+j, " is ", count)
             tmp += str(count) + " "
         s = tmp + "\n" + s
     print(s)
+
+
+def pawn_bonus(board, square, color):
+    # returns increased pawn score based on rank of pawn.
+    # multiplier values chosen arbitrarily
+    pawn_value = 206
+    multiplier = [0, 1, 1, 1.05, 1.1, 1.3, 2]
+    piece = "P" if color == chess.WHITE else "p"
+    if (board.piece_at(square) != None and board.piece_at(square).symbol() == piece):
+        return pawn_value * multiplier[get_row(square)]
+    else:
+        return 0
+
+def count_squares_knight_attacks(board, square):
+    # returns the number of squares within the chessboard a knight on square SQUARE can attack
+    count = 0
+    if (get_column(square) <= 6 and get_row(square) <= 5):
+        count += 1
+    if (get_column(square) >= 1 and get_row(square) <= 5):
+        count += 1
+    if (get_column(square) <= 5 and get_row(square) <= 6):
+        count += 1
+    if (get_column(square) >= 1 and get_row(square) <= 6):
+        count += 1
+    if (get_column(square) >= 1 and get_row(square) >= 2):
+        count += 1
+    if (get_column(square) <= 6 and get_row(square) >= 2):
+        count += 1
+    if (get_column(square) >= 2 and get_row(square) >= 1):
+        count += 1
+    if (get_column(square) <= 5 and get_row(square) >= 1):
+        count += 1
+    return count
+
+def knight_bonus(board, square, color):
+    # knight is more powerful when it is closer to the center.
+    multiplier = [0.85, 0.85, 0.85, 1, 1, 1.05, 1.15, 1.2, 1.2]
+    piece = "N" if color == chess.WHITE else "n"
+    if (board.piece_at(square) != None and board.piece_at(square).symbol() == piece):
+        return multiplier[count_squares_knight_attacks(board, square)]
+    else:
+        return 0
+    
+
+def weighted_bonus(board, color):
+    # returns weighted bonus for COLOR
+    # NOTE: only considers pawns and knights for now.
+    score = 0
+    for i in range(8):
+        for j in range(8):
+            score += pawn_bonus(board, i*8+j, color)
+            score += knight_bonus(board, i*8+j, color)
+    return score
+
+
+# stealing stockfish code entirely here
+# NOTE: idk if this is actually correct
+def pinned_direction(board, square):
+    color = 1
+    if board.piece_at(square).color == chess.BLACK:
+        color = -1
+    for i in range(8):
+        ix = (i + (i > 3)) % 3 - 1
+        iy = (i + (i > 3)) // 3 - 1
+        king = False
+        for d in range(1, 8):
+            # TODO: rewrite to handle OOB wraparound nonsense. 
+            if (get_row(square) + d * ix <= 7) and (get_row(square) + d * ix >= 0) and (get_column(square) + d * iy <= 7) and (get_column(square) + d * iy >= 0):
+                if board.piece_at(square + d * ix + d * iy * 8) is not None:
+                    if board.piece_at(square + d * ix + d * iy * 8).symbol() == "K":
+                        king = True
+                    break
+        if king:
+            for d in range(1, 8):
+                if (get_row(square) - d * ix <= 7) and (get_row(square) - d * ix >= 0) and (get_column(square) - d * iy <= 7) and (get_column(square) - d * iy >= 0):
+                    if board.piece_at(square - d * ix - d * iy * 8) is not None:
+                        if board.piece_at(square - d * ix - d * iy * 8).symbol() == "Q":
+                            return abs(ix + iy * 3) * color
+                        elif board.piece_at(square - d * ix - d * iy * 8).symbol() == "B" and (ix * iy != 0):
+                            return abs(ix + iy * 3) * color
+                        elif board.piece_at(square - d * ix - d * iy * 8).symbol() == "R" and (ix * iy == 0):
+                            return abs(ix + iy * 3) * color
+                        break
+
+    return 0
+
+
+
             
 
 
@@ -311,4 +511,7 @@ print(knight_attack(board, chess.G5, chess.WHITE))
 print("Number of passed pawns for white: ", count_passed_pawn(board, chess.WHITE))
 print("Number of passed pawns for black: ", count_passed_pawn(board, chess.BLACK))
 print("Total control for white: ", total_control(board, chess.WHITE))
+print("Total control for black: ", total_control(board, chess.BLACK))
+print("Weighted bonus for white: ", weighted_bonus(board, chess.WHITE))
+print("Weighted bonus for black: ", weighted_bonus(board, chess.BLACK))
 # print(material_count(stockfish.board()))
