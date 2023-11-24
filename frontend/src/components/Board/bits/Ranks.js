@@ -1,4 +1,4 @@
-import '../styles/Ranks.css'
+import './Ranks.css'
 
 const Ranks = ({ranks}) => 
     <div className="ranks">

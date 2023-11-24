@@ -1,16 +1,3 @@
-:root {
-    --tile-size: 70px;
-    --bg-color : #202020;
-    --highlight : rgba(0,0,0,.1);
-    --check : #FEEC48;
-}
-
-@media all and (max-width: 450px) {
-    :root {
-        --tile-size : 100px;
-    }
-}
-
 .board {
     display: grid;
     position: relative;
@@ -19,33 +6,29 @@
 
 .tiles {
     display: grid;
-    grid-template-columns: repeat(8, var(--tile-size));
-    grid-template-rows: repeat(8, var(--tile-size));
-    width: calc(8 * var(--tile-size));
+    grid-template-columns: repeat(8,var(--tile-size));
+    grid-template-rows: repeat(8,var(--tile-size));
+    width: calc(8*var(--tile-size));
 }
-
-.tile {
+.tile{
     position: relative;
 }
-
-.tile-light {
-    background-color: #e9edcc;
+.tile--light {
+    background-color: var(--light-tile);
 }
-
-.tile-dark {
-    background-color: #769954;
+.tile--dark {
+    background-color: var(--dark-tile);
 }
-
 .highlight:after {
     display: block;
     position: absolute;
     content: '';
-    width : calc(.5*var(--tile-size));
-    height : calc(.5*var(--tile-size));
+    width : calc(.35*var(--tile-size));
+    height : calc(.35*var(--tile-size));
     background: var(--highlight);
     border-radius: 50%;
-    left: 25%;
-    top: 25%;
+    left: 32.5%;
+    top: 32.5%;
 }
 .attacking:after {
     display: block;
