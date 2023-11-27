@@ -9,7 +9,6 @@ import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import TakeBack from "../components/Control/bits/TakeBack";
 import MovesList from "../components/Control/bits/MovesList";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 function Play() {
   const [appState, dispatch] = useReducer(reducer, initGameState);
@@ -18,8 +17,8 @@ function Play() {
     dispatch,
   };
   return (
-    <AppContext.Provider value={providerState}>
-      <div className="App">
+    <div className="App">
+      <AppContext.Provider value={providerState}>
         <Navbar />
         <Board />
         <Control>
@@ -27,8 +26,8 @@ function Play() {
           <TakeBack />
         </Control>
         <Footer />
-      </div>
-    </AppContext.Provider>
+      </AppContext.Provider>
+    </div>
   );
 }
 
