@@ -9,7 +9,9 @@ class ChessAutoEncoder(nn.Module):
 
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Linear(feature_length, 128),
+            nn.Linear(feature_length, feature_length//2),
+            nn.ReLU(),
+            nn.Linear(feature_length//2, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),

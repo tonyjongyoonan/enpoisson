@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from ...parse_data import get_training_data_raw, transform_data
 from torch.utils.data import Dataset, DataLoader
 
-NUM_EPOCHS = 1
+NUM_EPOCHS = 5
 
 class MyDataset(Dataset):
     def __init__(self, X, Y):
