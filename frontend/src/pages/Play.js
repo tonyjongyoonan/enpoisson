@@ -17,17 +17,16 @@ function Play() {
     dispatch,
   };
   return (
-    <div className="App">
-      <AppContext.Provider value={providerState}>
-        <Navbar />
+    <AppContext.Provider value={providerState}>
+      <div className="App">
         <Board />
         <Control>
           <MovesList />
           <TakeBack />
         </Control>
         <Footer />
-      </AppContext.Provider>
-    </div>
+      </div>
+    </AppContext.Provider>
   );
 }
 
