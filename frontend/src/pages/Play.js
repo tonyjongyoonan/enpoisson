@@ -6,7 +6,6 @@ import AppContext from "../contexts/Context";
 import Board from "../components/Board/Board";
 import Control from "../components/Control/Control";
 import Footer from "../components/Footer";
-import Navbar from "../components/Navbar";
 import TakeBack from "../components/Control/bits/TakeBack";
 import MovesList from "../components/Control/bits/MovesList";
 
@@ -18,7 +17,7 @@ function Play() {
   };
   return (
     <AppContext.Provider value={providerState}>
-      <div className="App">
+      <div className="Game">
         <Board />
         <Control>
           <MovesList />
