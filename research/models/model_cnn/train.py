@@ -1,4 +1,6 @@
 import torch.optim as optim
+import torch
+import torch.nn as nn
 from model_cnn import ChessCNN
 import matplotlib.pyplot as plt
 from ..script import LoadPGN
