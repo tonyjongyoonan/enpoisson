@@ -8,6 +8,9 @@ authors = ["nlao1 <nlao@seas.upenn.edu>"]
 python = "^3.8"
 Django = "^4.2.7"
 djangorestframework = "^3.14.0"
+pymongo = "^4.6.0"
+dnspython = "^2.4.2"
+mongoengine = "^0.27.0"
 
 [tool.poetry.dev-dependencies]
 
