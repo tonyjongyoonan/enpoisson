@@ -1,7 +1,7 @@
 import torch.optim as optim
 from model_autoencoder import ChessAutoEncoder
 import matplotlib.pyplot as plt
-from ..script import LoadPGN
+from ...parse_data import get_training_data_raw, transform_data, batch_generator
 
 NUM_EPOCHS = 3
 
