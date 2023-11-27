@@ -17,7 +17,7 @@ def get_training_data_raw():
     stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
     stockfish.set_depth(8)
 
-    pgn_file = "../lichess_db_standard_rated_2013-01.pgn"
+    pgn_file = "lichess_db_standard_rated_2013-01.pgn"
     pgn = open(pgn_file)
     game = chess.pgn.read_game(pgn)
 
@@ -51,7 +51,7 @@ def get_training_data_raw():
             features["new_board"] = board_to_bitboard_array(board)
             board.pop()
             # End
-            label = features["move"].lower() == str(move_list[i + 1]).lower()
+            label = int(features["move"].lower() == str(move_list[i + 1]).lower())
             dataset.append((features, label))
             if label:
                 break
@@ -70,10 +70,6 @@ def transform_data(raw):
     X = []
     Y = []
     for x,y in raw:
-        X.append([x['elo']] + x['board'] + x['new_board'])
+        X.append([int(x['elo'])] + x['board'] + x['new_board'])
         Y.append(y)
-    return X,Y
-
-def batch_generator(X, Y, batch_size):
-    for i in range((X.shape[0] - batch_size) // batch_size):
-        yield torch.tensor(X[i * batch_size: i * batch_size + batch_size]),torch.tensor(Y[i * batch_size: i * batch_size + batch_size])
+    return torch.tensor(X,dtype=torch.float32),torch.tensor(Y,dtype=torch.float32)
