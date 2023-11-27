@@ -1,0 +1,27 @@
+@import "../constants.css";
+
+.box {
+  position: absolute;
+  place-content: center;
+  place-items: center;
+  background-color: antiquewhite;
+  text-align: center;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  border-radius: 25px;
+}
+
+.grid-container {
+  position:relative;
+  display: grid;
+  row-gap: 3vh;
+  column-gap: 3vw;
+  grid-template-columns: auto 30% 30%;
+  grid-template-rows: auto 40% 40%;
+  width:75vw;
+  height:65vh;
+  place-content: center;
+  place-items: center;
+  text-align: center;
+  background-color: #afafaf;
+  font-family: 'Zen Maru Gothic', sans-serif;
+}

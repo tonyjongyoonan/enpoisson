@@ -1,0 +1,23 @@
+@import '../constants.css';
+@import url('https://fonts.googleapis.com/css2?family=Sofia+Sans&display=swap');
+
+.Game {
+  display: grid;
+  place-content: center;
+  place-items: center;
+  width: 100vh;
+  height: 100vh;
+  background: var(--bg-color);
+  font-family: 'Sofia Sans', sans-serif;
+  grid-template-columns: auto 220px;
+
+}
+
+button {
+  background: var(--dark-tile);
+  color: var(--light-tile);
+  border: 0 none;
+  padding: 10px 30px;
+  margin: 10px 0;
+  font-size: 1.1em;
+}

@@ -1,3 +1,4 @@
+import "./Play.css";
 import React from "react";
 import { reducer } from "../reducer/reducer";
 import { useReducer } from "react";
