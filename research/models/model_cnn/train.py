@@ -1,10 +1,11 @@
-import torch
-import torch.nn as nn
 import torch.optim as optim
-from models import MyModel
-from torch.utils.data import DataLoader
+from model_cnn import ChessCNN
 import matplotlib.pyplot as plt
+from ..script import LoadPGN
+
 #from torch.utils.tensorboard import SummaryWriter
+
+NUM_EPOCHS = 3
 
 def train(device, model, train_loader, val_loader, num_epochs):
     train_loss_values = []
@@ -60,16 +61,19 @@ def train(device, model, train_loader, val_loader, num_epochs):
 
 if __name__ == "__main__":
     #TODO: Import your dataset here
+    #Import dataset and generate data loaders
+    filepath = "/Users/jlee0/Desktop/cis400/enpoisson/lichess_db_standard_rated_2013-01.pgn"
+    train_loader, val_loader = LoadPGN(filepath)
 
     # Initialize model, loss function, and optimizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MyModel()
+    model = ChessCNN()
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # DataLoader for your dataset
-    train_loader = DataLoader(YOUR_DATASET, batch_size=BATCH_SIZE, shuffle=True)
+    # Train the model
+    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, val_loader, NUM_EPOCHS)
 
     # Train the model
     train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, NUM_EPOCHS)

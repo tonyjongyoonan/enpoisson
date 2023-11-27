@@ -1,10 +1,9 @@
-import torch
-import torch.nn as nn
 import torch.optim as optim
-from models import MyModel
-from torch.utils.data import DataLoader
+from model_autoencoder import ChessAutoEncoder
 import matplotlib.pyplot as plt
-#from torch.utils.tensorboard import SummaryWriter
+from ..script import LoadPGN
+
+NUM_EPOCHS = 3
 
 def train(device, model, train_loader, val_loader, num_epochs):
     train_loss_values = []
@@ -54,25 +53,23 @@ def train(device, model, train_loader, val_loader, num_epochs):
         val_error.append(100-100*val_correct/val_total)
         train_loss_values.append(training_loss)
         train_error.append(100-100*train_correct/train_total)
-        print(f'Epoch {epoch+1}, Training Loss: {training_loss}, 
-              Validation Loss: {validation_loss}, Error: {train_error[-1]}')
+        print(f'Epoch {epoch+1}, Training Loss: {training_loss}, Validation Loss: {validation_loss}, Error: {train_error[-1]}')
     return train_error,train_loss_values, val_error, val_loss_values
 
 if __name__ == "__main__":
-    #TODO: Import your dataset here
+    #Import dataset and generate data loaders
+    filepath = "/Users/jlee0/Desktop/cis400/enpoisson/lichess_db_standard_rated_2013-01.pgn"
+    train_loader, val_loader = LoadPGN(filepath)
 
     # Initialize model, loss function, and optimizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MyModel()
+    model = ChessAutoEncoder()
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # DataLoader for your dataset
-    train_loader = DataLoader(YOUR_DATASET, batch_size=BATCH_SIZE, shuffle=True)
-
     # Train the model
-    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, NUM_EPOCHS)
+    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, val_loader, NUM_EPOCHS)
 
     # Plot the training error
     plt.figure(figsize=(10, 5))

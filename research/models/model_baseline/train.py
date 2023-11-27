@@ -59,7 +59,9 @@ def train(device, model, train_loader, val_loader, num_epochs):
     return train_error,train_loss_values, val_error, val_loss_values
 
 if __name__ == "__main__":
-    #TODO: Import your dataset here
+    #Import dataset and generate data loaders
+    filepath = "/Users/jlee0/Desktop/cis400/enpoisson/lichess_db_standard_rated_2013-01.pgn"
+    train_loader, val_loader = LoadPGN(filepath)
 
     # Initialize model, loss function, and optimizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -68,11 +70,8 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # DataLoader for your dataset
-    train_loader = DataLoader(YOUR_DATASET, batch_size=BATCH_SIZE, shuffle=True)
-
     # Train the model
-    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, NUM_EPOCHS)
+    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, val_loader, NUM_EPOCHS)
 
     # Plot the training error
     plt.figure(figsize=(10, 5))

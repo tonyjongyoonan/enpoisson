@@ -1,5 +1,3 @@
-import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 """This is a auto-encoder model that takes in the bitboard as input along with

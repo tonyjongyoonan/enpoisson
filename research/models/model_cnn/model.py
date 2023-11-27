@@ -4,16 +4,27 @@ import torch.nn.functional as F
 
 """This is a CNN model that takes in the board as a grid."""
 
-class MyModelCNN(nn.Module):
+class ChessCNN(nn.Module):
     def __init__(self):
-        super(MyModel, self).__init__()
-        # Define layers
-        self.fc1 = nn.Linear(in_features=INPUT_FEATURES, out_features=128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, NUM_CLASSES)
+        super(ChessCNN, self).__init__()
+        # Assuming each channel represents a different piece type (e.g., 12 channels for 6 types each for black and white)
+        self.conv1 = nn.Conv2d(12, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(128 * 8 * 8, 512)  # Assuming an 8x8 chess board
+        self.fc2 = nn.Linear(512, 1)
 
     def forward(self, x):
+        # Apply convolutions
+        x = F.relu(self.conv1(x))
+        x = F.max_pool2d(x, 2)
+        x = F.relu(self.conv2(x))
+        x = F.max_pool2d(x, 2)
+
+        # Flatten the tensor
+        x = x.view(x.size(0), -1)
+
+        # Apply fully connected layers
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = torch.sigmoid(self.fc2(x))  # Using sigmoid for binary classification
+
         return x

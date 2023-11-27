@@ -1,0 +1,19 @@
+[Event "Kaggle 2 Arena"]
+[Site "https://lichess.org/4V72hBAf"]
+[Date "2021.05.04"]
+[White "orthogonalmotion"]
+[Black "beatkat"]
+[Result "0-1"]
+[UTCDate "2021.05.04"]
+[UTCTime "22:48:05"]
+[WhiteElo "1394"]
+[BlackElo "1513"]
+[WhiteRatingDiff "-80"]
+[BlackRatingDiff "+3"]
+[Variant "Standard"]
+[TimeControl "240+0"]
+[ECO "C40"]
+[Termination "Time forfeit"]
+
+1. e4 e5 2. Nf3 Qh4 3. Nxh4 Nf6 4. Nf5 Nxe4 5. f3 Nf6 6. d4 exd4 7. Nxd4 d5 8. Qd3 Bc5 9. Bg5 Nfd7 10. Nf5 O-O 11. Ne7+ Kh8 12. Nxc8 Rxc8 13. h4 Re8+ 14. Kd1 Ne5 15. Qxd5 Bb6 16. Bb5 Nbc6 17. h5 Red8 18. Qd2 Rxd2+ 19. Kxd2 Rd8+ 20. Kc1 Nb4 21. h6 gxh6 22. Bxh6 Ng6 23. Bd2 Nd5 24. Na3 Bd4 25. c3 Bg7 26. Bc4 Nb6 27. Bxf7 Ne5 28. Nb5 Nd3+ 29. Kc2 Nf2 30. Rh5 Nc4 31. Bg6 Rxd2+ 32. Kc1 Rd1+ 33. Kc2 Rxa1 34. Rxh7+ Kg8 35. Nxc7 a6 36. Ne6 b5 37. Nxg7 Kf8 38. Ne6+ Kg8 39. Rg7+ Kh8 40. Rh7+ Kg8 0-1
+
