@@ -2,6 +2,7 @@ import chess.pgn
 from stockfish import Stockfish
 import chess
 import torch
+"""
 from heuristics import (is_passed_pawn_black, is_passed_pawn_white, count_passed_pawn, knight_attack, king_attack, pawn_attack, 
                         knight_control, pawn_control, king_control, bishop_xray_control, rook_xray_control, queen_control, total_control,
                         pawn_bonus, count_squares_knight_attacks, knight_bonus, weighted_bonus, pinned_direction, count_black_double_pawns,
@@ -10,7 +11,7 @@ from heuristics import (is_passed_pawn_black, is_passed_pawn_white, count_passed
                         white_delta_king_pawn_distance, black_delta_king_pawn_distance, white_delta_double_pawns, black_delta_double_pawns, 
                         black_delta_passed_pawns, white_delta_passed_pawns, white_delta_total_control, black_delta_total_control, white_delta_weighted_bonus,
                         black_delta_weighted_bonus)
-
+"""
 def board_to_bitboard_array(board):
     bitboard_array = []
     for piece_type in chess.PIECE_TYPES:
@@ -23,7 +24,7 @@ def board_to_bitboard_array(board):
 
 def get_training_data_raw():
     stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
-    stockfish.set_depth(8)
+    stockfish.set_depth(6)
 
     pgn_file = "lichess_db_standard_rated_2013-01.pgn"
     pgn = open(pgn_file)
@@ -31,9 +32,8 @@ def get_training_data_raw():
 
     #dataset of tuples ({}, label) where label is True if move was played and False otherwise
     dataset = []
-
-    while (game is not None):
-
+    count = 0
+    while (game is not None) and count < 300:
         move_list = list(game.mainline_moves())
         stockfish.set_position(move_list)
 
@@ -45,43 +45,42 @@ def get_training_data_raw():
         board = chess.Board()
         board.push(tmp_moves[-1])
 
-    #dataset of tuples ({}, label) where label is True if move was played and False otherwise
-    dataset = []
-
-    for i in range(len(move_list) - 1):
-        stockfish.set_position(tmp_moves)
-        # feature set 
-        top_moves = stockfish.get_top_moves(10)
-        curr_board = board_to_bitboard_array(board)
-        for move in top_moves:
-            features = {}
-            features["elo"] = game.headers[curr_move + "Elo"]
-            features["board"] = curr_board
-            features["move"] = str(move["Move"])
-            features["white_material_count"] = material_count(board)[0]
-            features["black_material_count"] = material_count(board)[1]
-            features["white_bishop_pair"] = white_has_bishop_pair(board)
-            features["black_bishop_pair"] = black_has_bishop_pair(board)
-            features["white_king_pawn_dist"] = king_pawn_distance(board)[0]
-            features["black_king_pawn_dist"] = king_pawn_distance(board)[1]
-            features["white_doubled_pawns"] = count_white_double_pawns(board)
-            features["black_doubled_pawns"] = count_black_double_pawns(board)
-            features["white_passed_pawns"] = count_passed_pawn(board, chess.WHITE)
-            features["black_passed_pawns"] = count_passed_pawn(board, chess.BLACK)
-            features["white_total_control"] = total_control(board, chess.WHITE)
-            features["black_total_control"] = total_control(board, chess.BLACK)
-            features["white_weighted_bonus"] = weighted_bonus(board, chess.WHITE)
-            features["black_weighted_bonus"] = weighted_bonus(board, chess.BLACK)
-            # Pass in updated board
-            move_ = chess.Move.from_uci(move["Move"])
-            board.push(move_)
-            features["new_board"] = board_to_bitboard_array(board)
-            board.pop()
-            # End
-            label = int(features["move"].lower() == str(move_list[i + 1]).lower())
-            dataset.append((features, label))
-            if label:
-                break
+        for i in range(len(move_list) - 1):
+            stockfish.set_position(tmp_moves)
+            # feature set 
+            top_moves = stockfish.get_top_moves(5)
+            curr_board = board_to_bitboard_array(board)
+            for move in top_moves:
+                features = {}
+                features["elo"] = game.headers[curr_move + "Elo"]
+                features["board"] = curr_board
+                features["move"] = str(move["Move"])
+                """
+                features["white_material_count"] = material_count(board)[0]
+                features["black_material_count"] = material_count(board)[1]
+                features["white_bishop_pair"] = white_has_bishop_pair(board)
+                features["black_bishop_pair"] = black_has_bishop_pair(board)
+                features["white_king_pawn_dist"] = king_pawn_distance(board)[0]
+                features["black_king_pawn_dist"] = king_pawn_distance(board)[1]
+                features["white_doubled_pawns"] = count_white_double_pawns(board)
+                features["black_doubled_pawns"] = count_black_double_pawns(board)
+                features["white_passed_pawns"] = count_passed_pawn(board, chess.WHITE)
+                features["black_passed_pawns"] = count_passed_pawn(board, chess.BLACK)
+                features["white_total_control"] = total_control(board, chess.WHITE)
+                features["black_total_control"] = total_control(board, chess.BLACK)
+                features["white_weighted_bonus"] = weighted_bonus(board, chess.WHITE)
+                features["black_weighted_bonus"] = weighted_bonus(board, chess.BLACK)
+                """
+                # Pass in updated board
+                move_ = chess.Move.from_uci(move["Move"])
+                board.push(move_)
+                features["new_board"] = board_to_bitboard_array(board)
+                board.pop()
+                # Undo update on board
+                label = int(features["move"].lower() == str(move_list[i + 1]).lower())
+                dataset.append((features, label))
+                if label:
+                    break
 
             # Update Board
             tmp_moves.append(move_list[i + 1])
@@ -91,15 +90,17 @@ def get_training_data_raw():
                 curr_move = "Black"
             else:
                 curr_move = "White"
-        
+            
         game = chess.pgn.read_game(pgn)
-        print(dataset)
+        count += 1
+    print(len(dataset))
     return dataset
 
 def transform_data(raw):
     X = []
     Y = []
     for x,y in raw:
-        X.append([int(x['elo'])] + x['board'] + x['new_board'])
-        Y.append(y)
+        if '?' not in x['elo']:
+            X.append([int(x['elo'])] + x['board'] + x['new_board'])
+            Y.append(y)
     return torch.tensor(X,dtype=torch.float32),torch.tensor(Y,dtype=torch.float32)

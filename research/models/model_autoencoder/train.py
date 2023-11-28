@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from ...parse_data import get_training_data_raw, transform_data
 from torch.utils.data import Dataset, DataLoader
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 30
 
 class MyDataset(Dataset):
     def __init__(self, X, Y):
@@ -28,8 +28,7 @@ def train(device, model, train_loader, val_loader, num_epochs):
         train_correct = 0
         train_total = 0
         training_loss = 0.0
-        if epoch%5 == 0:
-          for op_params in optimizer.param_groups:
+        for op_params in optimizer.param_groups:
             op_params['lr'] = op_params['lr'] - 0.0001
         # Training
         model.train()
@@ -91,7 +90,7 @@ if __name__ == "__main__":
     model = ChessAutoEncoder(feature_length)
     model = model.to(device)
     criterion = nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.0050)
 
     # Train the model
     train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, None, NUM_EPOCHS)
