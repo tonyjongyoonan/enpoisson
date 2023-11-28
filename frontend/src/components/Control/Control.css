@@ -5,3 +5,11 @@
     text-align: center;
     height: calc(8*var(--tile-size));
 }
+.control button {
+  background: var(--dark-tile);
+  color: var(--light-tile);
+  border: 0 none;
+  padding: 10px 30px;
+  margin: 10px 0;
+  font-size: 1.1em;
+}
