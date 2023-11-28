@@ -499,6 +499,7 @@ def white_has_bishop_pair(board):
 def white_is_sac(board, move):
     # returns True if MOVE is a sacrifice
     # TODO: Actually write this function. completely cheese function rn
+    # TODO: make sure defended pieces aren't deemed as sacs LOL
     board.push(move)
     # find square that piece just moved to
     square = move.to_square
@@ -700,10 +701,10 @@ def get_all_delta_for_move(board, move):
     print("Black weighted bonus delta: ", black_weighted_bonus_delta)
     print("Is white sac: ", is_sac_white)
     print("Is black sac: ", is_sac_black)
-    calc_white_difficulty = white_difficulty(white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
+    calc_white_difficulty = white_difficulty(board, move, white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
                 black_king_pawn_distance_delta, white_double_pawns_delta, black_double_pawns_delta, white_passed_pawns_delta, black_passed_pawns_delta,
                 white_total_control_delta, black_total_control_delta, white_weighted_bonus_delta, black_weighted_bonus_delta, is_sac_white, is_sac_black)
-    calc_black_difficulty = black_difficulty(white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
+    calc_black_difficulty = black_difficulty(board, move, white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
                 black_king_pawn_distance_delta, white_double_pawns_delta, black_double_pawns_delta, white_passed_pawns_delta, black_passed_pawns_delta,
                 white_total_control_delta, black_total_control_delta, white_weighted_bonus_delta, black_weighted_bonus_delta, is_sac_white, is_sac_black)
     print("White difficulty: ", calc_white_difficulty)
@@ -711,7 +712,7 @@ def get_all_delta_for_move(board, move):
 
 
 
-def white_difficulty(white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta, 
+def white_difficulty(board, move, white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta, 
                black_king_pawn_distance_delta, white_double_pawns_delta, black_double_pawns_delta, white_passed_pawns_delta, black_passed_pawns_delta, 
                white_total_control_delta, black_total_control_delta, white_weighted_bonus_delta, black_weighted_bonus_delta, is_sac_white, is_sac_black):
     # returns difficulty of the move that WHITE just played
@@ -731,7 +732,23 @@ def white_difficulty(white_material_delta, black_material_delta, white_bishop_pa
     # black_weighted_bonus_delta --> positive if black gained bonus, negative if black lost bonus
     # is_sac_white --> True if white sacrificed a piece
     # is_sac_black --> True if black sacrificed a piece
-    sac_diff = 20 if is_sac_white else 0
+    piece_value_endgame = {
+        "p": 206,
+        "n": 854,
+        "b": 915,
+        "r": 1380,
+        "q": 2682,
+        "k": 0
+    } 
+    # board.piece_at(square).symbol() == piece
+    square = move.to_square
+
+    board.push(move)
+    # sac_diff = 20 if is_sac_white else 0
+    sac_diff = 0
+    if (is_sac_white):
+        sac_diff = 20 * (piece_value_endgame[board.piece_at(square).symbol().lower()]/854)
+    board.pop()
     weighted_diff = abs(white_weighted_bonus_delta) * 1.3 if white_weighted_bonus_delta > 0 else abs(white_weighted_bonus_delta) * 0.7
     control_diff = abs(white_total_control_delta) * 1.3 if white_total_control_delta > 0 else abs(white_total_control_delta) * 0.7
     passed_pawn_diff = abs(white_passed_pawns_delta) * 1.3 if white_passed_pawns_delta > 0 else abs(white_passed_pawns_delta) * 0.7
@@ -742,7 +759,7 @@ def white_difficulty(white_material_delta, black_material_delta, white_bishop_pa
     capture_diff = abs(black_material_delta) * 1.3 if black_material_delta < 0 else abs(black_material_delta) * 0.7
     return sac_diff + weighted_diff + control_diff + passed_pawn_diff + double_pawn_diff + king_pawn_diff + bishop_pair_diff + material_diff + capture_diff
 
-def black_difficulty(white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
+def black_difficulty(board, move, white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
                 black_king_pawn_distance_delta, white_double_pawns_delta, black_double_pawns_delta, white_passed_pawns_delta, black_passed_pawns_delta,
                 white_total_control_delta, black_total_control_delta, white_weighted_bonus_delta, black_weighted_bonus_delta, is_sac_white, is_sac_black):
      # returns difficulty of the move that BLACK just played
@@ -762,17 +779,34 @@ def black_difficulty(white_material_delta, black_material_delta, white_bishop_pa
      # black_weighted_bonus_delta --> positive if black gained bonus, negative if black lost bonus
      # is_sac_white --> True if white sacrificed a piece
      # is_sac_black --> True if black sacrificed a piece
-     sac_diff = 20 if is_sac_black else 0
-     weighted_diff = abs(black_weighted_bonus_delta) * 1.3 if black_weighted_bonus_delta > 0 else abs(black_weighted_bonus_delta) * 0.7
-     control_diff = abs(black_total_control_delta) * 1.3 if black_total_control_delta > 0 else abs(black_total_control_delta) * 0.7
-     passed_pawn_diff = abs(black_passed_pawns_delta) * 1.3 if black_passed_pawns_delta > 0 else abs(black_passed_pawns_delta) * 0.7
-     double_pawn_diff = abs(black_double_pawns_delta) * 1.3 if black_double_pawns_delta > 0 else abs(black_double_pawns_delta) * 0.7
 
-     king_pawn_diff = abs(black_king_pawn_distance_delta) * 1.3 if black_king_pawn_distance_delta > 0 else abs(black_king_pawn_distance_delta) * 0.7
-     bishop_pair_diff = 20 if black_bishop_pair_delta[1] else 0
-     material_diff = abs(black_material_delta) * 1.3 if black_material_delta > 0 else abs(black_material_delta) * 0.7
-     capture_diff = abs(white_material_delta) * 1.3 if white_material_delta < 0 else abs(white_material_delta) * 0.7
-     return sac_diff + weighted_diff + control_diff + passed_pawn_diff + double_pawn_diff + king_pawn_diff + bishop_pair_diff + material_diff + capture_diff
+    piece_value_endgame = {
+        "p": 206,
+        "n": 854,
+        "b": 915,
+        "r": 1380,
+        "q": 2682,
+        "k": 0
+    } 
+    # board.piece_at(square).symbol() == piece
+    square = move.to_square
+    board.push(move)
+    # sac_diff = 20 if is_sac_white else 0
+    sac_diff = 0
+    if (is_sac_black):
+        sac_diff = 20 * (piece_value_endgame[board.piece_at(square).symbol().lower()]/854)
+    board.pop()
+    sac_diff = 20 if is_sac_black else 0
+    weighted_diff = abs(black_weighted_bonus_delta) * 1.3 if black_weighted_bonus_delta > 0 else abs(black_weighted_bonus_delta) * 0.7
+    control_diff = abs(black_total_control_delta) * 1.3 if black_total_control_delta > 0 else abs(black_total_control_delta) * 0.7
+    passed_pawn_diff = abs(black_passed_pawns_delta) * 1.3 if black_passed_pawns_delta > 0 else abs(black_passed_pawns_delta) * 0.7
+    double_pawn_diff = abs(black_double_pawns_delta) * 1.3 if black_double_pawns_delta > 0 else abs(black_double_pawns_delta) * 0.7
+
+    king_pawn_diff = abs(black_king_pawn_distance_delta) * 1.3 if black_king_pawn_distance_delta > 0 else abs(black_king_pawn_distance_delta) * 0.7
+    bishop_pair_diff = 20 if black_bishop_pair_delta[1] else 0
+    material_diff = abs(black_material_delta) * 1.3 if black_material_delta > 0 else abs(black_material_delta) * 0.7
+    capture_diff = abs(white_material_delta) * 1.3 if white_material_delta < 0 else abs(white_material_delta) * 0.7
+    return sac_diff + weighted_diff + control_diff + passed_pawn_diff + double_pawn_diff + king_pawn_diff + bishop_pair_diff + material_diff + capture_diff
 
 
 
@@ -788,8 +822,8 @@ def black_difficulty(white_material_delta, black_material_delta, white_bishop_pa
 stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
 # read first game in ruy_lopezes.txt
 # pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
-pgn = open("single_game.pgn")
-# pgn = open("custom_game.pgn")
+# pgn = open("single_game.pgn")
+pgn = open("knight_sac.pgn")
 game = chess.pgn.read_game(pgn)
 
 move_list = list(game.mainline_moves())
