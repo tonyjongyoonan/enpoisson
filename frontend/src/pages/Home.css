@@ -1,22 +1,33 @@
 @import "../constants.css";
 
+h1 {
+  font-weight: 400;
+  font-size: 30pt;
+  width: 50%;
+}
+
+.box p {
+  font-size: 12pt;
+  font-weight: 400;
+  width: 60%;
+}
+
 .box {
   position: absolute;
-  place-content: center;
-  place-items: center;
-  background-color: antiquewhite;
-  text-align: center;
+  display: grid;
+  padding-left: 5%;
+  text-align: left;
+  align-items:center;
   font-family: 'Zen Maru Gothic', sans-serif;
   border-radius: 25px;
 }
 
 .grid-container {
-  position:relative;
+  position: relative;
   display: grid;
-  row-gap: 3vh;
-  column-gap: 3vw;
-  grid-template-columns: auto 30% 30%;
-  grid-template-rows: auto 40% 40%;
+  gap: 0.5vw;
+  grid-template-columns: 55% 45%;
+  /* grid-template-rows: auto 40% 40%; */
   width:75vw;
   height:65vh;
   place-content: center;
