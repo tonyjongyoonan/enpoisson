@@ -24,7 +24,7 @@
       linear-gradient(#fff 0 0),
       #000;
     background-position:center;
-    background-size: 50% 4%,4% 50%; /*thickness = 2px, length = 50% (25px)*/
+    background-size: 40% 4%,4% 40%; /*thickness = 2px, length = 50% (25px)*/
     background-repeat:no-repeat;
   }
   
