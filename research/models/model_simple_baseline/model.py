@@ -1,5 +1,4 @@
 import torch.nn as nn
-import torch
 
 """This is a auto-encoder model that takes in the bitboard as input along with
 some other heuristics."""
@@ -10,7 +9,7 @@ class ChessAutoEncoder(nn.Module):
 
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Linear(768, 100),
+            nn.Linear(feature_length, 100),
             nn.ReLU(),
             nn.Linear(100, 100),
             nn.ReLU(),
@@ -27,7 +26,7 @@ class ChessAutoEncoder(nn.Module):
         )
 
     def forward(self, x):
-        original_board = self.encoder(x[:,1:769])
-        new_board = self.encoder(x[:,769:1537])
-        x = self.classifier(torch.cat((x[:,0:1],original_board,new_board),dim=1))
+        original_board = self.encoder(x[1:769])
+        new_board = self.encoder(x[769:1537])
+        x = self.classifier([x[0]] + original_board + new_board)
         return x

@@ -36,14 +36,18 @@ def train(device, model, train_loader, val_loader, num_epochs):
             data, labels = data.to(device), labels.to(device)
             # Forward Pass
             output = model(data)
-            loss = criterion(output, labels)
+            loss = criterion(output, labels.unsqueeze(1))
             # Backpropogate & Optimize
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             # For logging purposes
             training_loss += loss.item()
-            _, predicted = torch.max(output.data, 1)
+            # Apply sigmoid to convert outputs to probabilities
+            probs = torch.sigmoid(output)
+            # Convert probabilities to predicted class (0 or 1) using 0.5 as threshold
+            predicted = probs > 0.5
+            predicted = predicted.flatten()
             train_total += labels.size(0)
             train_correct += (predicted == labels).sum().item()
         # Validation
@@ -66,6 +70,7 @@ def train(device, model, train_loader, val_loader, num_epochs):
             val_error.append(100-100*val_correct/val_total)
         # Log Model Performance  
         train_loss_values.append(training_loss)
+        print(train_correct)
         train_error.append(100-100*train_correct/train_total)
         print(f'Epoch {epoch+1}, Training Loss: {training_loss}, Validation Loss: {validation_loss}, Error: {train_error[-1]}')
     return train_error,train_loss_values, val_error, val_loss_values

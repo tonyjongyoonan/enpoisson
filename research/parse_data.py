@@ -26,7 +26,7 @@ def board_to_bitboard_array(board):
 
 def get_training_data_raw():
     stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
-    stockfish.set_depth(12)
+    stockfish.set_depth(5)
 
     pgn_file = "../lichess_db_standard_rated_2013-01.pgn"
     pgn = open(pgn_file)
@@ -35,7 +35,8 @@ def get_training_data_raw():
     #dataset of tuples ({}, label) where label is True if move was played and False otherwise
     dataset = []
     count = 0
-    while (game is not None) and count < 300:
+    while (game is not None) and count < 25:
+        print(count)
         move_list = list(game.mainline_moves())
         stockfish.set_position(move_list)
 
@@ -143,4 +144,4 @@ def transform_data(raw):
         if '?' not in x['elo']:
             X.append([int(x['elo'])] + x['board'] + x['new_board'])
             Y.append(y)
-    return torch.tensor(X,dtype=torch.float32),torch.tensor(Y,dtype=torch.float32)
+    return torch.tensor(X,dtype=torch.float32),torch.tensor(Y,dtype=torch.long)
