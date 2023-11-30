@@ -334,7 +334,7 @@ def total_control(board, color):
             tmp += str(count) + " "
             control += count
         s = tmp + "\n" + s
-    print(s)
+    # print(s)
     return control
 
 
@@ -503,7 +503,6 @@ def white_is_sac(board, move):
     board.push(move)
     # find square that piece just moved to
     square = move.to_square
-    print("square: ", square)
     boolea = pawn_attack(board, square, chess.WHITE) or knight_attack(board, square, chess.WHITE) or king_attack(board, square, chess.WHITE)
     board.pop()
     return boolea
@@ -513,7 +512,7 @@ def black_is_sac(board, move):
     board.push(move)
     # find square that piece just moved to
     square = move.to_square
-    print("square: ", square)
+    # print("square: ", square)
     boolea = pawn_attack(board, square, chess.BLACK) or knight_attack(board, square, chess.BLACK) or king_attack(board, square, chess.BLACK)
     board.pop()
     return boolea
