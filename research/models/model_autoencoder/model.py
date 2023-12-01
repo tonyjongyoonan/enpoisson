@@ -12,18 +12,16 @@ class ChessAutoEncoder(nn.Module):
         self.encoder = nn.Sequential(
             nn.Linear(768, 100),
             nn.ReLU(),
-            nn.Linear(100, 100),
+            nn.Linear(100, 50),
             nn.ReLU(),
-            nn.Linear(100, 100),
-            nn.ReLU(),
-            nn.Linear(100, 100)  # Compressed representation
+            nn.Linear(50, 50)  # Compressed representation
         )
 
         # Classifier
         self.classifier = nn.Sequential(
-            nn.Linear(201, 100),
+            nn.Linear(101, 50),
             nn.ReLU(),
-            nn.Linear(100, 2)
+            nn.Linear(50, 2)
         )
 
     def forward(self, x):

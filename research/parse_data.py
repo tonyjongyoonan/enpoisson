@@ -5,7 +5,7 @@ import torch
 import random
 import numpy as np
 from numpy.random import choice
-from heuristics import (is_passed_pawn_black, is_passed_pawn_white, count_passed_pawn, knight_attack, king_attack, pawn_attack, 
+"""from heuristics import (is_passed_pawn_black, is_passed_pawn_white, count_passed_pawn, knight_attack, king_attack, pawn_attack, 
                         knight_control, pawn_control, king_control, bishop_xray_control, rook_xray_control, queen_control, total_control,
                         pawn_bonus, count_squares_knight_attacks, knight_bonus, weighted_bonus, pinned_direction, count_black_double_pawns,
                         count_white_double_pawns, king_pawn_distance, black_has_bishop_pair, white_has_bishop_pair, white_is_sac, black_is_sac,
@@ -13,7 +13,7 @@ from heuristics import (is_passed_pawn_black, is_passed_pawn_white, count_passed
                         white_delta_king_pawn_distance, black_delta_king_pawn_distance, white_delta_double_pawns, black_delta_double_pawns, 
                         black_delta_passed_pawns, white_delta_passed_pawns, white_delta_total_control, black_delta_total_control, white_delta_weighted_bonus,
                         black_delta_weighted_bonus)
-
+"""
 def board_to_bitboard_array(board):
     bitboard_array = []
     for piece_type in chess.PIECE_TYPES:
@@ -24,19 +24,21 @@ def board_to_bitboard_array(board):
             bitboard_array.extend([int(bool(bitboard & (1 << square))) for square in range(64)])
     return bitboard_array
 
-def get_training_data_raw():
+def get_training_data_raw(num_games, validation=False):
     stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
     stockfish.set_depth(5)
 
-    pgn_file = "../lichess_db_standard_rated_2013-01.pgn"
+    pgn_file = "lichess_db_standard_rated_2013-01.pgn"
     pgn = open(pgn_file)
     game = chess.pgn.read_game(pgn)
 
     #dataset of tuples ({}, label) where label is True if move was played and False otherwise
     dataset = []
     count = 0
-    while (game is not None) and count < 25:
-        print(count)
+    if validation: 
+        for i in range(100):
+            game = chess.pgn.read_game(pgn)
+    while (game is not None) and count < num_games:
         move_list = list(game.mainline_moves())
         stockfish.set_position(move_list)
 
@@ -69,7 +71,7 @@ def get_training_data_raw():
             probabilities = softmax(input)
             probabilities = np.array(list(probabilities))
             probabilities /= probabilities.sum()
-            moves_to_use = choice(all_moves, min([5, np.count_nonzero(probabilities)]), replace=False, p=probabilities)
+            moves_to_use = choice(all_moves, min([4, np.count_nonzero(probabilities)]), replace=False, p=probabilities)
             moves_to_use = list(moves_to_use)
             counter = False
             for move in moves_to_use:
@@ -79,6 +81,7 @@ def get_training_data_raw():
                 moves_to_use.append(played_move)
             # moves_to_use.append(move_list[i + 1])
             curr_board = board_to_bitboard_array(board)
+            """
             white_material_count = material_count(board)[0]
             black_material_count = material_count(board)[1]
             white_bishop_pair = white_has_bishop_pair(board)
@@ -93,11 +96,13 @@ def get_training_data_raw():
             black_total_control = total_control(board, chess.BLACK)
             white_weighted_bonus = weighted_bonus(board, chess.WHITE)
             black_weighted_bonus = weighted_bonus(board, chess.BLACK)
+            """
             for move in moves_to_use:
                 features = {}
                 features["elo"] = game.headers[curr_move + "Elo"]
                 features["board"] = curr_board
                 features["move"] = str(move["Move"])
+                """
                 features["centipawn"] = move["Centipawn"]
                 features["white_material_count"] = white_material_count
                 features["black_material_count"] = black_material_count
@@ -113,6 +118,7 @@ def get_training_data_raw():
                 features["black_total_control"] = black_total_control
                 features["white_weighted_bonus"] = white_weighted_bonus
                 features["black_weighted_bonus"] = black_weighted_bonus
+                """
                 # Pass in updated board
                 move_ = chess.Move.from_uci(move["Move"])
                 board.push(move_)

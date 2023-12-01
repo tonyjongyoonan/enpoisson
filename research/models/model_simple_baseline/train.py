@@ -70,9 +70,8 @@ def train(device, model, train_loader, val_loader, num_epochs):
             val_error.append(100-100*val_correct/val_total)
         # Log Model Performance  
         train_loss_values.append(training_loss)
-        print(train_correct)
         train_error.append(100-100*train_correct/train_total)
-        print(f'Epoch {epoch+1}, Training Loss: {training_loss}, Validation Loss: {validation_loss}, Error: {train_error[-1]}')
+        print(f'Epoch {epoch+1}, Training Loss: {training_loss}, Validation Error: {val_error[-1]}, Training Error: {train_error[-1]}')
     return train_error,train_loss_values, val_error, val_loss_values
 
 if __name__ == "__main__":

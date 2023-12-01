@@ -67,28 +67,30 @@ def train(device, model, train_loader, val_loader, num_epochs):
         # Log Model Performance  
         train_loss_values.append(training_loss)
         train_error.append(100-100*train_correct/train_total)
-        print(f'Epoch {epoch+1}, Training Loss: {training_loss}, Validation Loss: {validation_loss}, Error: {train_error[-1]}')
+        print(f'Epoch {epoch+1}, Training Loss: {training_loss}, Validation Error: {val_error[-1]}, Error: {train_error[-1]}')
     return train_error,train_loss_values, val_error, val_loss_values
 
 if __name__ == "__main__":
     #Import dataset and generate data loaders
     filepath = "/Users/jlee0/Desktop/cis400/enpoisson/lichess_db_standard_rated_2013-01.pgn"
-    raw_data = get_training_data_raw()
+    raw_data = get_training_data_raw(50)
     X,Y = transform_data(raw_data)
     data = MyDataset(X,Y)
-    print(X.shape)
     train_loader = DataLoader(data, batch_size=32, shuffle=True)
-
+    raw_val_data = get_training_data_raw(10)
+    X_val,Y_val = transform_data(raw_val_data)
+    val_data = MyDataset(X_val,Y_val)
+    val_loader = DataLoader(val_data, batch_size=32, shuffle=True)
     # Initialize model, loss function, and optimizer
     feature_length = len(X[0])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = ChessAutoEncoder(feature_length)
     model = model.to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-4)
 
     # Train the model
-    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, None, NUM_EPOCHS)
+    train_error,train_loss_values, val_error, val_loss_values = train(device, model, train_loader, val_loader, NUM_EPOCHS)
 
     # Plot the training error
     plt.figure(figsize=(10, 5))
