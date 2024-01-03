@@ -36,7 +36,7 @@ def get_training_data_raw(num_games, validation=False):
     dataset = []
     count = 0
     if validation: 
-        for i in range(100):
+        for i in range(5000):
             game = chess.pgn.read_game(pgn)
     while (game is not None) and count < num_games:
         move_list = list(game.mainline_moves())

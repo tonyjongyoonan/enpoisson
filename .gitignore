@@ -129,3 +129,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Large Files
+lichess_db_standard_rated_2019-01.csv

@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.optim as optim
 from .model import ChessAutoEncoder
 import matplotlib.pyplot as plt
-from ...parse_data import get_training_data_raw, transform_data
+from ...src.parse_data import get_training_data_raw, transform_data
 from torch.utils.data import Dataset, DataLoader
 
-NUM_EPOCHS = 30
+NUM_EPOCHS = 100
 
 class MyDataset(Dataset):
     def __init__(self, X, Y):
@@ -73,14 +73,14 @@ def train(device, model, train_loader, val_loader, num_epochs):
 if __name__ == "__main__":
     #Import dataset and generate data loaders
     filepath = "/Users/jlee0/Desktop/cis400/enpoisson/lichess_db_standard_rated_2013-01.pgn"
-    raw_data = get_training_data_raw(50)
+    raw_data = get_training_data_raw(3000)
     X,Y = transform_data(raw_data)
     data = MyDataset(X,Y)
-    train_loader = DataLoader(data, batch_size=32, shuffle=True)
-    raw_val_data = get_training_data_raw(10)
+    train_loader = DataLoader(data, batch_size=64, shuffle=True)
+    raw_val_data = get_training_data_raw(500,validation=True)
     X_val,Y_val = transform_data(raw_val_data)
     val_data = MyDataset(X_val,Y_val)
-    val_loader = DataLoader(val_data, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_data, batch_size=64, shuffle=True)
     # Initialize model, loss function, and optimizer
     feature_length = len(X[0])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -94,10 +94,10 @@ if __name__ == "__main__":
 
     # Plot the training error
     plt.figure(figsize=(10, 5))
-    plt.plot(train_loss_values, label='Training Loss')
-    plt.xlabel('Weight Updates')
+    plt.plot(val_error, label='Validation Loss')
+    plt.xlabel('Epoch')
     plt.ylabel('Error')
-    plt.title('Training Error')
+    plt.title('Validation Error')
     plt.legend()
     plt.show()
     plt.savefig('training_error_model_autoencoder.png')  # This will save the plot as an image

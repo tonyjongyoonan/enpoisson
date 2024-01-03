@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from .model import ChessAutoEncoder
 import matplotlib.pyplot as plt
-from ...parse_data import get_training_data_raw, transform_data
+from ...src.parse_data import get_training_data_raw, transform_data
 from torch.utils.data import Dataset, DataLoader
 
 NUM_EPOCHS = 30
