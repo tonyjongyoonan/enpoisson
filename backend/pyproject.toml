@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "en-poission-backend"
+name = "en-poisson-backend"
 version = "0.1.0"
 description = ""
 authors = ["nlao1 <nlao@seas.upenn.edu>"]
