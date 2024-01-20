@@ -6,7 +6,7 @@ function Navbar() {
   return (
     <div className="Navbar">
       <div className="leftSide">
-        <span className="logo" style={{ fontSize: 25 }}>
+        <span className="logo" style={{ fontSize: 23 }}>
           EN POISSON
         </span>
       </div>
