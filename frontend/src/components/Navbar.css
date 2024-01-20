@@ -14,7 +14,7 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: #222222;
+  background: #1b1b1b;
   background-position: center;
 }
 
@@ -50,7 +50,7 @@ header {
     padding-left: 10px;
     color: #ffc703;
     font-size: 1.1em;
-    font-weight: 1000;
+    font-weight: 250;
 }
 
 .Navbar a {
