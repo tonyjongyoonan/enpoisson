@@ -12,6 +12,9 @@ httpx = "^0.26.0"
 black = "^23.12.1"
 python-dotenv = "^1.0.1"
 psycopg2-binary = "^2.9.9"
+passlib = "^1.7.4"
+argon2-cffi = "^23.1.0"
+pydantic = {extras = ["email"], version = "^2.5.3"}
 
 [tool.poetry.dev-dependencies]
 flake8 = "^7.0.0"

@@ -2,6 +2,8 @@ import psycopg2
 from dotenv import dotenv_values
 from typing import Optional
 
+USER_TABLE_NAME = "user_credentials"
+
 
 def load_database():
     secrets = dotenv_values(".env")
@@ -13,10 +15,13 @@ def load_database():
     )
 
 
-def fetch_password(username) -> Optional[str]:
+async def fetch_password(username) -> Optional[str]:
+    # TODO: im not sure if the best way to do database queries is to initialize a new connection every time. tbd
     conn = load_database()
     cur = conn.cursor()
-    cur.execute("SELECT password FROM users WHERE username = %s", (username,))
+    cur.execute(
+        f"SELECT password FROM {USER_TABLE_NAME} WHERE username = %s", (username,)
+    )
     result = cur.fetchone()
     if not result:
         return None
@@ -26,10 +31,12 @@ def fetch_password(username) -> Optional[str]:
     return password
 
 
-def create_account(username, password, email) -> bool:
+async def create_account(username, password, email) -> bool:
     conn = load_database()
     cur = conn.cursor()
-    cur.execute("SELECT username FROM users WHERE username = %s", (username,))
+    cur.execute(
+        f"SELECT username FROM {USER_TABLE_NAME} WHERE username = %s", (username,)
+    )
     result = cur.fetchone()
     if result:
         return False

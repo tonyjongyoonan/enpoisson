@@ -1,61 +1,52 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from dotenv import dotenv_values
-import psycopg2
-import os
+from passlib.hash import argon2  # for password hashing
+from models import UserCreate, UserLogin
+import database
 
-
-# load database
-def load_database():
-    secrets = dotenv_values(".env")
-    psycopg2.connect(
-        host=secrets["DB_HOST"],
-        database=secrets["DB_NAME"],
-        user=secrets["DB_USERNAME"],
-        password=secrets["DB_PASSWORD"],
-    )
-
-
-connection = load_database()
 
 app = FastAPI()
 users = {}
 
 
-class UserCreate(BaseModel):
-    username: str
-    password: str
-    email: str
-
-
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-
 @app.post("/login")
-def validate_login(user: UserLogin):
-    # FIXME: this we are essentially storing passwords in plain text; use a salt, and a hash
-    # or sign in with Google
-    username = user.username
-    password = user.password
-    if users[username] and users[username].password == password:
+async def validate_login(user: UserLogin):
+    password_check = await database.fetch_password(user.username)
+    if argon2.verify(user.password, password_check):
         return {"message": f"OK"}
     else:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @app.post("/account")
-def create_account(user: UserCreate):
+async def create_account(user: UserCreate):
     if (
         user.username is not None
         and user.password is not None
         and user.email is not None
         and user.username != ""
-        and user.username not in users
     ):
-        username = user.username
-        users[username] = user
-        return {"message": f"Succesfully created account for {username}."}
+        hashed_password = argon2.hash(user.password)
+        create_success = await database.create_account(
+            user.username, hashed_password, user.email
+        )
+        if not create_success:
+            raise HTTPException(status_code=409, detail="Bad request.")
+        else:
+            return {"message": f"Succesfully created account for {user.username}."}
     else:
-        raise HTTPException(status_code=409, detail="Bad request.")
+        raise HTTPException(status_code=400, detail="Invalid username or password.")
+
+
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+
+
+if __name__ == "__main__":
+    print(argon2.hash("password"))
+    print(
+        argon2.verify(
+            "password",
+            "$argon2id$v=19$m=65536,t=3,p=4$HUPI2VuLEWKMcW6tVaq1Fg$B1F198SSajgfutyAVl75E0iOYrtB7WTsWpt69A6WnY4",
+        )
+    )
