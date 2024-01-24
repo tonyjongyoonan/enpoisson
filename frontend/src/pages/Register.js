@@ -11,7 +11,7 @@ function Register() {
     event.preventDefault();
     // Handle the registration logic here
     console.log('Registering:', username, email, password);
-    const response = fetch('http://localhost:3000/register', {
+    const response = await fetch('http://localhost:8000/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
