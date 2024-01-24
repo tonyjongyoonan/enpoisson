@@ -10,6 +10,9 @@ fastapi = "^0.109.0"
 uvicorn = "^0.26.0"
 httpx = "^0.26.0"
 black = "^23.12.1"
+scrypt = "^0.8.21"
+python-dotenv = "^1.0.1"
+psycopg2-binary = "^2.9.9"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^7.0.0"

@@ -1,21 +1,44 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from dotenv import dotenv_values
+import psycopg2
+import os
+
+
+# load database
+def load_database():
+    secrets = dotenv_values(".env")
+    psycopg2.connect(
+        host=secrets["DB_HOST"],
+        database=secrets["DB_NAME"],
+        user=secrets["DB_USERNAME"],
+        password=secrets["DB_PASSWORD"],
+    )
+
+
+connection = load_database()
 
 app = FastAPI()
-
 users = {}
 
 
-class User(BaseModel):
+class UserCreate(BaseModel):
     username: str
     password: str
     email: str
 
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
 @app.post("/login")
-def validate_login(username: str, password: str):
+def validate_login(user: UserLogin):
     # FIXME: this we are essentially storing passwords in plain text; use a salt, and a hash
     # or sign in with Google
+    username = user.username
+    password = user.password
     if users[username] and users[username].password == password:
         return {"message": f"OK"}
     else:
@@ -23,7 +46,7 @@ def validate_login(username: str, password: str):
 
 
 @app.post("/account")
-def create_account(user: User):
+def create_account(user: UserCreate):
     if (
         user.username is not None
         and user.password is not None
@@ -36,11 +59,3 @@ def create_account(user: User):
         return {"message": f"Succesfully created account for {username}."}
     else:
         raise HTTPException(status_code=409, detail="Bad request.")
-
-
-# @app.get("/profile/{username}")
-# def get_bender(name: str):
-#     if name not in benders:
-#         raise HTTPException(status_code=404, detail="bender not found.")
-#     else:
-#         return {"bender": name, "element": benders[name]}
