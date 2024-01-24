@@ -30,3 +30,5 @@ or
 poetry shell
 uvicorn main:app --reload
 ```
+
+Eventually we could upgrade to docker which might make some of this easier.
