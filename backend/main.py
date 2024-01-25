@@ -11,6 +11,8 @@ users = {}
 @app.post("/login")
 async def validate_login(user: UserLogin):
     password_check = await database.fetch_password(user.username)
+    if password_check is None:
+        raise HTTPException(status_code=404, detail="Account not found")
     if argon2.verify(user.password, password_check):
         return {"message": f"OK"}
     else:
@@ -19,6 +21,7 @@ async def validate_login(user: UserLogin):
 
 @app.post("/account")
 async def create_account(user: UserCreate):
+    print(user)
     if (
         user.username is not None
         and user.password is not None
