@@ -7,10 +7,20 @@ function Register() {
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
 
-  const handleRegister = (event) => {
+  const handleRegister = async (event) => {
     event.preventDefault();
     // Handle the registration logic here
     console.log('Registering:', username, email, password);
+    const response = await fetch('http://localhost:8000/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, email, password })
+    });
+
+    const data = await response.json();
+    console.log('Response: ', data);
   };
 
   return (
@@ -51,8 +61,7 @@ function Register() {
           <button className="register-button" type="submit">Register</button>
         </div>
         <p className="register-login-link">
-          Don't have an account? <Link to="/login" className="login-link">Log In</Link>
-        </p>
+          Already have an account? <br /> <Link to="/login" className="login-link"> Log In</Link>        </p>
       </form>
     </div>
   );
