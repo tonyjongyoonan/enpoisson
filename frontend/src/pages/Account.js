@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './Register.css';
+import './Account.css';
 
-function Register() {
+function Account() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
@@ -11,7 +11,7 @@ function Register() {
     event.preventDefault();
     // Handle the registration logic here
     console.log('Registering:', username, email, password);
-    const response = await fetch('http://localhost:8000/register', {
+    const response = await fetch('http://localhost:8000/account', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -67,4 +67,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default Account;
