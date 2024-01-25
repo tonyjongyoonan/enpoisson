@@ -3,15 +3,17 @@ from dotenv import dotenv_values
 from typing import Optional
 
 USER_TABLE_NAME = "user_credentials"
+GAME_TABLE_NAME = "games"
+EXPLANATION_TABLE_NAME = "explanations"
 
 
 def load_database():
     secrets = dotenv_values(".env")
     return psycopg2.connect(
         host=secrets["DB_HOST"],
-        database=secrets["DB_NAME"],
         user=secrets["DB_USERNAME"],
         password=secrets["DB_PASSWORD"],
+        database=secrets["DB_NAME"],
     )
 
 
@@ -38,13 +40,25 @@ async def create_account(username, password, email) -> bool:
         f"SELECT username FROM {USER_TABLE_NAME} WHERE username = %s", (username,)
     )
     result = cur.fetchone()
+    print(result)
     if result:
         return False
     cur.execute(
-        "INSERT INTO users (username, password, email) VALUES (%s, %s, %s)",
+        f"INSERT INTO {USER_TABLE_NAME} (username, password, email) VALUES (%s, %s, %s)",
         (username, password, email),
     )
     conn.commit()
     cur.close()
     conn.close()
     return True
+
+
+if __name__ == "__main__":
+    # test your code here
+    connection = load_database()
+    cursor = connection.cursor()
+    cursor.execute(
+        "select * from information_schema.columns where table_schema = 'public' ;"
+    )
+    result = cursor.fetchall()
+    print(result)
