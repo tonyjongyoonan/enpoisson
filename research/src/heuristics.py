@@ -1,6 +1,7 @@
 import chess.pgn
 from stockfish import Stockfish
 import chess
+import time
 
 def get_column(square):
     return square % 8
@@ -65,6 +66,11 @@ def count_passed_pawn(board, color):
                     if (is_passed_pawn_white(board, i, j)):
                         passed_pawns += 1
     return passed_pawns
+
+
+def attacks(board, square, color): 
+    # returns bitboard of pieces of COLOR that attack SQUARE
+    return board.attackers(color, square)
 
 
 
@@ -402,15 +408,16 @@ def pinned_direction(board, square):
         iy = (i + (i > 3)) // 3 - 1
         king = False
         for d in range(1, 8):
-            # TODO: rewrite to handle OOB wraparound nonsense. 
-            if (get_column(square) + d * ix <= 7) and (get_column(square) + d * ix >= 0) and (get_row(square) + d * iy <= 7) and (get_row(square) + d * iy >= 0):
+            if (get_column(square) + d * ix <= 7) and (get_column(square) + d * ix >= 0) and \
+            (get_row(square) + d * iy <= 7) and (get_row(square) + d * iy >= 0):
                 if board.piece_at(square + d * ix + d * iy * 8) is not None:
                     if board.piece_at(square + d * ix + d * iy * 8).symbol() == "K":
                         king = True
                     break
         if king:
             for d in range(1, 8):
-                if (get_column(square) - d * ix <= 7) and (get_column(square) - d * ix >= 0) and (get_row(square) - d * iy <= 7) and (get_row(square) - d * iy >= 0):
+                if (get_column(square) - d * ix <= 7) and (get_column(square) - d * ix >= 0) and \
+                (get_row(square) - d * iy <= 7) and (get_row(square) - d * iy >= 0):
                     if board.piece_at(square - d * ix - d * iy * 8) is not None:
                         if board.piece_at(square - d * ix - d * iy * 8).symbol() == "Q":
                             return abs(ix + iy * 3) * color
@@ -823,6 +830,7 @@ stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=2
 # pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
 # pgn = open("single_game.pgn")
 pgn = open("knight_sac.pgn")
+# pgn = open("smol_game.pgn")
 game = chess.pgn.read_game(pgn)
 
 move_list = list(game.mainline_moves())
@@ -834,13 +842,18 @@ for i in move_list:
     board.push(i)
 # get_all_heuristics(board)
 print(board)
+print(list(board.legal_moves))
 
 # determine who is playing next
 
 # get stockfish suggestions
-top_moves = stockfish.get_top_moves(3)
+time1 = time.time()
+top_moves = stockfish.get_top_moves(20)
+print(time.time() - time1)
+
 print(top_moves)
 get_all_delta_for_move(board, chess.Move.from_uci(str(top_moves[0]["Move"])))
+print(attacks(board, chess.E3, chess.WHITE))
 
 
 # print(material_count(stockfish.board()))

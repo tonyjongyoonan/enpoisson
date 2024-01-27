@@ -1,0 +1,18 @@
+[Event "small custom game"]
+[Site "https://lichess.org/"]
+[Date "2023.11.30"]
+[White "ishaan"]
+[Black "also_ishaan"]
+[Result "1-0"]
+[UTCDate "2023.11.30"]
+[UTCTime "22:48:05"]
+[WhiteElo "2826"]
+[BlackElo "4"]
+[WhiteRatingDiff "-2000"]
+[BlackRatingDiff "+800"]
+[Variant "Standard"]
+[TimeControl "240+0"]
+[ECO "C40"]
+[Termination "Time forfeit"]
+
+1. e4 

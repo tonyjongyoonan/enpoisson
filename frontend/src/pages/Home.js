@@ -13,9 +13,15 @@ function Home() {
           background: "#303030",
         }}
       >
+<<<<<<< Updated upstream
         <h6 style={{ color: gold, fontWeight: 400 }}>EN POISSON</h6>
         <h1 style={{ color: gold, fontWeight: 350, lineHeight: "1.1", marginBottom: "80px" }}>
           Perfect Chess <br /> with the premier engine
+=======
+        <h6 style={{ color: gold, fontWeight: 500 }}>En Poisson</h6>
+        <h1 style={{ color: gold }}>
+          Perfect chess <br /> with the premier engine
+>>>>>>> Stashed changes
         </h1>
         <p style={{ color: gold, alignItems: "end", marginBottom: "20px", fontWeight: 350 }}>
           Learn chess better with our new innovative chess engine, recommending
