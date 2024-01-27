@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import Play from "./pages/Play";
 import About from "./pages/About";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Account from "./pages/Account";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
@@ -19,7 +19,7 @@ function App() {
           <Route path="/play" exact element={<Play />} />
           <Route path="/about" exact element={<About />} />
           <Route path="/login" exact element={<Login />} />
-          <Route path="/register" exact element={<Register />} />          
+          <Route path="/account" exact element={<Account />} />          
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />
