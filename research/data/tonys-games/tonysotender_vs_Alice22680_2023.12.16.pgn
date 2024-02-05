@@ -1,0 +1,18 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2023.12.16"]
+[Round "?"]
+[White "tonysotender"]
+[Black "Alice22680"]
+[Result "0-1"]
+[ECO "C55"]
+[WhiteElo "1141"]
+[BlackElo "1132"]
+[TimeControl "600"]
+[EndTime "11:32:24 PST"]
+[Termination "Alice22680 won - game abandoned"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 h6 4. O-O Nf6 5. h3 Bd6 6. Re1 O-O 7. d3 a6 8. Nc3
+Bc5 9. a3 Ba7 10. b4 b5 11. Bb3 d6 12. Bb2 Bd7 13. Nd5 Nxd5 14. Bxd5 Rb8 15. Bc3
+Qf6 16. a4 Qg6 17. axb5 Ne7 18. bxa6 Nxd5 19. exd5 Bxh3 20. g3 f5 21. Nxe5 dxe5
+22. Bxe5 f4 23. Qf3 fxg3 24. Qxg3 Bxf2+ 25. Kh1 Bxg3 0-1

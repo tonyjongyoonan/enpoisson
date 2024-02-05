@@ -1,0 +1,18 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2023.12.26"]
+[Round "?"]
+[White "tonysotender"]
+[Black "Onlychees"]
+[Result "0-1"]
+[ECO "C50"]
+[WhiteElo "1134"]
+[BlackElo "1198"]
+[TimeControl "600"]
+[EndTime "16:33:02 PST"]
+[Termination "Onlychees won - game abandoned"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 h6 4. Nc3 Nf6 5. d3 Bc5 6. O-O d6 7. Re1 Bg4 8. h3
+Bh5 9. Be3 Bxe3 10. Rxe3 Nd4 11. g4 Bg6 12. Nd5 c6 13. Nxf6+ Qxf6 14. Nxd4 exd4
+15. Rf3 Qe5 16. Qe1 O-O-O 17. Bxf7 Bxf7 18. Rxf7 Rdf8 19. Rxf8+ Rxf8 20. Qa5
+Qxa5 21. a3 c5 0-1

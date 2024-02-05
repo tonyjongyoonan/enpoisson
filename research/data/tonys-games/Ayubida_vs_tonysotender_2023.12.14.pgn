@@ -1,0 +1,20 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2023.12.14"]
+[Round "?"]
+[White "Ayubida"]
+[Black "tonysotender"]
+[Result "1-0"]
+[ECO "C50"]
+[WhiteElo "1164"]
+[BlackElo "1150"]
+[TimeControl "600"]
+[EndTime "19:59:07 PST"]
+[Termination "Ayubida won by checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. O-O Nf6 5. Nc3 d6 6. h3 O-O 7. d3 Re8 8. Re1
+h6 9. a3 Qe7 10. b4 Nxb4 11. axb4 Bxb4 12. Bd2 Be6 13. Bxe6 Qxe6 14. d4 a6 15.
+dxe5 dxe5 16. Ra4 a5 17. Nb5 Rad8 18. Re2 Nxe4 19. Nxc7 Qd7 20. Nxe8 Qxa4 21.
+Rxe4 Rxd2 22. Nxd2 Qxe8 23. Nf3 Qc6 24. Rxe5 f6 25. Qd8+ Kh7 26. Re8 Qxc2 27.
+Nh4 Qc1+ 28. Kh2 Bd6+ 29. g3 Bxg3+ 30. Kxg3 Qa3+ 31. f3 g5 32. Qd7+ Qe7 33.
+Qxe7# 1-0

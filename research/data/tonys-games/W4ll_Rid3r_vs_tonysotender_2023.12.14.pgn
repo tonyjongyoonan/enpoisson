@@ -1,0 +1,24 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2023.12.14"]
+[Round "?"]
+[White "W4ll_Rid3r"]
+[Black "tonysotender"]
+[Result "0-1"]
+[ECO "A07"]
+[WhiteElo "1130"]
+[BlackElo "1167"]
+[TimeControl "600"]
+[EndTime "10:49:55 PST"]
+[Termination "tonysotender won by checkmate"]
+
+1. Nf3 d5 2. d4 Nf6 3. g3 Bf5 4. Bg2 Nc6 5. O-O e6 6. Bf4 Qe7 7. Nc3 Nd7 8. Bxc7
+h6 9. Be5 Ncxe5 10. dxe5 Qb4 11. Rb1 Bc5 12. a3 Qb6 13. e3 O-O 14. b4 Be7 15.
+Qd4 Rac8 16. Qxb6 Nxb6 17. Nb5 Bxc2 18. Rbc1 Bd3 19. Rxc8 Rxc8 20. Nd6 Bxd6 21.
+exd6 Bxf1 22. Bxf1 Nc4 23. d7 Rd8 24. Bxc4 dxc4 25. Ne5 f6 26. Nxc4 Rxd7 27. Kg2
+b5 28. Na5 Rd3 29. Nc6 Rxa3 30. Nd4 a5 31. Nxb5 axb4 32. Kf1 Ra1+ 33. Ke2 b3 34.
+Nc3 b2 35. Kd2 b1=Q 36. Nxb1 Rxb1 37. Kc2 Rh1 38. h4 Rf1 39. Kd2 Rxf2+ 40. Ke1
+Rg2 41. Kf1 Rxg3 42. Kf2 Rh3 43. Kg2 Rxh4 44. Kf3 g5 45. Kg3 Re4 46. Kf3 f5 47.
+Kf2 g4 48. Ke2 g3 49. Kf3 g2 50. Kxg2 Rxe3 51. Kf2 Re4 52. Kg3 Rg4+ 53. Kf3 h5
+54. Kf2 h4 55. Kf3 h3 56. Kf2 h2 57. Kf3 h1=Q+ 58. Kf2 Rf4+ 59. Ke3 Re4+ 60. Kd3
+Qf3+ 61. Kd2 Re2+ 62. Kd1 Qf1# 0-1

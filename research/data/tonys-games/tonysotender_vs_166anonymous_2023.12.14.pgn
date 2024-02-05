@@ -1,0 +1,21 @@
+[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2023.12.14"]
+[Round "?"]
+[White "tonysotender"]
+[Black "166anonymous"]
+[Result "0-1"]
+[ECO "C55"]
+[WhiteElo "1158"]
+[BlackElo "1167"]
+[TimeControl "600"]
+[EndTime "18:44:06 PST"]
+[Termination "166anonymous won by checkmate"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bc4 h6 4. Nc3 Nf6 5. d3 d6 6. Be3 Bg4 7. h3 Bh5 8. Nd5
+Be7 9. Nxe7 Qxe7 10. O-O Nd4 11. Bxd4 exd4 12. c3 dxc3 13. bxc3 O-O-O 14. Qa4
+Kb8 15. Rab1 Nd7 16. Rb3 Nb6 17. Qb5 Bxf3 18. gxf3 Qh4 19. Kh2 f5 20. a4 Qf4+
+21. Kg1 a6 22. Qxf5 Qh4 23. a5 Nxc4 24. dxc4 Rhf8 25. Qg4 Qf6 26. Kg2 h5 27.
+Qxh5 g6 28. Qg4 Rh8 29. f4 Rh4 30. Qg3 Rdh8 31. Rh1 Qe6 32. e5 Qxc4 33. Ra3 Qe4+
+34. Kg1 dxe5 35. fxe5 Qe1+ 36. Kg2 Qe4+ 37. f3 Qe2+ 38. Qf2 Qxe5 39. Re1 Qg5+
+40. Kh2 Rxh3# 0-1
