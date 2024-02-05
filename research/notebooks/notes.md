@@ -1,7 +1,6 @@
 # Short Term Experiments
  - set up GPUs and test DenseNet vs. Maia (Deep-Residual-CNN) vs. Multimodal (CNN + RNN)
  - how much of past sequence matters? (currently doing 16 half-moves)
- - Focal Loss
 
 # Architectural Experiments
 - ELO as a parameter 
