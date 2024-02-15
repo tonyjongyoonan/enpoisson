@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -19,6 +21,16 @@ const Login = () => {
     });
     const data = await response.json();
     console.log('Response: ', data);
+    if (response.ok) {
+      // login was successful
+      console.log('Login successful');
+      setMessage('Login successful!');
+      navigate.push('/');
+    } else {
+      // login failed
+      console.log('Login failed');
+      navigate.push('/')
+    }
 
   };
 

@@ -1,9 +1,25 @@
 import PlusButton from "../components/PlusButton";
 import "./Home.css";
-import React from "react";
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function Home() {
   const gold = "#ffc703";
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/current-user')
+        setCurrentUser(response.data.username);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
   return (
     <div class="grid-container">
       <div
@@ -13,15 +29,9 @@ function Home() {
           background: "#303030",
         }}
       >
-<<<<<<< Updated upstream
         <h6 style={{ color: gold, fontWeight: 400 }}>EN POISSON</h6>
         <h1 style={{ color: gold, fontWeight: 350, lineHeight: "1.1", marginBottom: "80px" }}>
-          Perfect Chess <br /> with the premier engine
-=======
-        <h6 style={{ color: gold, fontWeight: 500 }}>En Poisson</h6>
-        <h1 style={{ color: gold }}>
-          Perfect chess <br /> with the premier engine
->>>>>>> Stashed changes
+          {currentUser ? 'Welcome, ${currentUser}' : 'Log in to play!'}
         </h1>
         <p style={{ color: gold, alignItems: "end", marginBottom: "20px", fontWeight: 350 }}>
           Learn chess better with our new innovative chess engine, recommending
