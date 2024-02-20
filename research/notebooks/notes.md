@@ -1,12 +1,11 @@
 # Short Term Experiments
- - set up GPUs and test DenseNet vs. Maia (Deep-Residual-CNN) vs. Multimodal (CNN + RNN)
- - how much of past sequence matters? (currently doing 16 half-moves)
 -  12 channels vs. 6 channels [DONE it's much better]
 - Channels representing queen side and king side castling + many other stuff
 - add [CLS] and [SEP] to sequence of moves 
 
-# Architectural Experiments
-- ELO as a parameter 
+# Long-Term/Architectural Experiments
+- Transfer + Fine-tuning vs. ELO as a parameter 
+- MoE
 - ViT (it kinda works but found research paper that tells us it's not needed. ResNet is enough)
 - Transformers with much more data 
 - fine-tuning model on someone's 10 games (effective?) -> to somehow provide context to our model when doing a prediction for a user? -> SAM?
