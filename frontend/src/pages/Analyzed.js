@@ -1,24 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import Chessboard from 'chessboardjsx';
 import { Chess } from 'chess.js';
+import { useLocation } from 'react-router-dom';
 
 const Analyzed = () => {
+  const location = useLocation();
+  const { pgn } = location.state;
   const [fen, setFen] = useState('start');
   const [chess] = useState(new Chess());
 
-  const makeRandomMove = () => {
-    const moves = chess.moves();
-    if (moves.length === 0) return;
+  const getPgnMoves = (pgn) => {
+    const tempChess = new Chess()
+    tempChess.loadPgn(pgn);
+    return tempChess.history();
+  };
 
-    const randomMove = moves[Math.floor(Math.random() * moves.length)];
-    chess.move(randomMove);
+  const makeMove = (moves, moveNo) => {
+    chess.move(moves[moveNo]);
+    console.log(chess.fen());
+    console.log(chess.ascii());
+    console.log(moves[moveNo]);
+    console.log(moves.length);
     setFen(chess.fen());
   };
 
   useEffect(() => {
+    const moves = getPgnMoves(pgn);
+    let moveNo = 0;
     const interval = setInterval(() => {
-      makeRandomMove();
-    }, 1000); // Adjust the interval as needed
+      if (moveNo < moves.length) {
+        makeMove(moves, moveNo);
+        moveNo++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
