@@ -8,14 +8,14 @@ h1 {
 
 h2 {
   font-weight: 400;
-  font-size: 22pt;
-  width: 50%;
+  font-size: 20pt;
+  width: 70%;
   color: whitesmoke;
 }
 
 .home-widget-box p {
-  font-size: 12pt;
-  font-weight: 500;
+  font-size: 11pt;
+  font-weight: 400;
   width: 70%;
   color: whitesmoke;
 }

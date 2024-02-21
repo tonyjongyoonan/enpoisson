@@ -3,34 +3,30 @@ import { reducer } from "../reducer/reducer";
 import { useReducer } from "react";
 import { initGameState } from "../constants";
 import AppContext from "../contexts/Context";
-import Board from "../components/Board/Board";
-import Control from "../components/Control/Control";
 import Footer from "../components/Footer";
-import TakeBack from "../components/Control/bits/TakeBack";
-import MovesList from "../components/Control/bits/MovesList";
 import FileUpload from '../components/FileUpload';
+import './Analyze.css';
+import { useNavigate } from 'react-router-dom';
 
 function Analyze() {
-  const [pgn, setPgn] = React.useState('');
-  const handleFileUpload = (pgnData) => {
-    setPgn(pgnData);
-  }
   const [appState, dispatch] = useReducer(reducer, initGameState);
   const providerState = {
     appState,
     dispatch,
   };
+
+  const navigate = useNavigate();
+  const handleFileUpload = (pgnData) => {
+    navigate('/analyzed', { state: { pgn: pgnData } });
+  };
+
   return (
     <AppContext.Provider value={providerState}>
-      <div>
-      <h1>Analyzer</h1>
-      <FileUpload onFileUpload={handleFileUpload} />
-      <Board />
-      <Control>
-        <MovesList />
-        <TakeBack />
-      </Control>
-      <Footer />
+      <div className="analyzer-container">
+        <div className="file-upload">
+          <FileUpload onFileUpload={handleFileUpload} />
+          </div>
+        <Footer />
       </div>
     </AppContext.Provider>
   );

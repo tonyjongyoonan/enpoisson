@@ -1,20 +1,36 @@
-# Short Term Experiments
- - set up GPUs and test DenseNet vs. Maia (Deep-Residual-CNN) vs. Multimodal (CNN + RNN)
- - how much of past sequence matters? (currently doing 16 half-moves)
+# TODO
+- create pipeline from PGN with next move -> model input (12,8,8) tensor -> adjusted PGN with predicted move
+- create dataset of 50 positions (tactical plays: check, taking, forks | positional plays: taking the center) -- moves that are very obvious and good, (maybe not perfect), to a decent human player
+- error analysis and gradCAM analysis of those moves
+AFTER DEMO:
+- add more channels
+- experiment: add [CLS] and [SEP] tokens
+- experiment with tony's games
+- experiment with cross attention
+- finalize Multimodal architecture
+LATER
+- MoE???
+- do transfer of pretraining with chess tokens
+- do transfer + finetuning (on ELO)
+
+## Short Term Experiments
 -  12 channels vs. 6 channels [DONE it's much better]
 - Channels representing queen side and king side castling + many other stuff
 - add [CLS] and [SEP] to sequence of moves 
 
-# Architectural Experiments
-- ELO as a parameter 
+## Long-Term/Architectural Experiments
+- Transfer + Fine-tuning vs. ELO as a parameter 
+- MoE
 - ViT (it kinda works but found research paper that tells us it's not needed. ResNet is enough)
 - Transformers with much more data 
 - fine-tuning model on someone's 10 games (effective?) -> to somehow provide context to our model when doing a prediction for a user? -> SAM?
 
-# Things to Do
-- After deciding on architecture: train on full dataset on GPUs, LR warm up, SWA after 25+ epochs (garuntees +1 test accuracy), 
+## Things to Do At The End
+- After finalizing on architecture: train on full dataset on GPUs, LR warm up, SWA after 25+ epochs (garuntees +1 test accuracy), 
 
-# Note: 2/5/24 11:30PM
+# Notes 
+
+## Note: 2/5/24 11:30PM
 Things to do before the next presentation (15 hours)
 - Test Extra Input Channels (5 hours)
 - GradCAM (1 hour)

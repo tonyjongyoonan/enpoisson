@@ -65,9 +65,9 @@ function Home() {
           gridRowStart: 3,
         }}
       >
-        <p>Learn from your grames with clear explanations</p>
+        <p>Learn via AI-fueled explanations</p>
         <h2>Analysis</h2>
-        <PlusButton url={"/analysis"} />
+        <PlusButton url={"/analyze"} />
       </div>
       <div
         class="home-widget-box"
@@ -77,9 +77,9 @@ function Home() {
           gridRowStart: 3,
         }}
       >
-        <p>Interact with friends & community!</p>
-        <h2>Social</h2>
-        <PlusButton url={"/social"} />
+        <p>Create an account to play!</p>
+        <h2>Register</h2>
+        <PlusButton url={"/account"} />
       </div>
     </div>
   );
