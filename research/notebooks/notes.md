@@ -3,20 +3,16 @@
 - create dataset of 50 positions (tactical plays: check, taking, forks | positional plays: taking the center) -- moves that are very obvious and good, (maybe not perfect), to a decent human player
 - error analysis and gradCAM analysis of those moves
 AFTER DEMO:
-- add more channels
+- add more channels (@nate)
 - experiment: add [CLS] and [SEP] tokens
 - experiment with tony's games
 - experiment with cross attention
 - finalize Multimodal architecture
 LATER
-- MoE???
-- do transfer of pretraining with chess tokens
+- do transfer + finetuning on RNN (token prediction) + CNN (token shape)
 - do transfer + finetuning (on ELO)
+- MoE???
 
-## Short Term Experiments
--  12 channels vs. 6 channels [DONE it's much better]
-- Channels representing queen side and king side castling + many other stuff
-- add [CLS] and [SEP] to sequence of moves 
 
 ## Long-Term/Architectural Experiments
 - Transfer + Fine-tuning vs. ELO as a parameter 
