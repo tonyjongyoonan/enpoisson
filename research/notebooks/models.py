@@ -1,6 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class ChessCNN_no_pooling(nn.Module):
@@ -144,86 +148,188 @@ class DenseNetEncoder(nn.Module):
         return out
 
 
-def train_cnn(
-    device,
-    model,
-    train_loader,
-    val_loader,
-    criterion,
-    optimizer,
-    num_epochs,
-    learn_decay,
-):
-    train_loss_values = []
-    train_error = []
-    val_loss_values = []
-    val_error = []
-    val_3_accuracy = []
-    swa_model = AveragedModel(model)
-    swa_start = 1
-    for epoch in range(num_epochs):
-        train_correct = 0
-        train_total = 0
-        training_loss = 0.0
-        # Training
-        model.train()
-        count = 0
-        for sequences, labels in train_loader:
-            count += 1
-            sequences, labels = sequences.to(device), labels.to(device)
-            # Forward Pass
-            output = model(sequences)
-            loss = criterion(output, labels)
-            # Backpropogate & Optimize
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            # For logging purposes
-            training_loss += loss.item()
-            _, predicted = torch.max(output.data, 1)
-            train_total += labels.size(0)
-            train_correct += (predicted == labels).sum().item()
-            if count % 1000 == 0:
-                print(
-                    f"Epoch {epoch+1}, Batch: {count}| Training Loss: {training_loss/count}"
-                )
-        if epoch >= swa_start:
-            swa_model.update_parameters(model)
-        torch.optim.swa_utils.update_bn(train_loader, swa_model)
-        # Validation
-        model.eval()
-        val_correct = 0
-        val_total = 0
-        validation_loss = 0.0
-        if val_loader is not None:
-            with torch.no_grad():
-                val_correct = 0
-                val_total = 0
-                val_top3_correct = 0
-                validation_loss = 0
+class MultiModal(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.rnn = RNNModel(vocab, d_embed, d_hidden, 16, dropout=dropout)
+        self.cnn = ChessCNN(32)
+        self.fc = nn.Linear(48, d_out)
 
-                for sequences, labels in val_loader:
-                    sequences, labels = sequences.to(device), labels.to(device)
-                    outputs = model(sequences)
-                    _, predicted = torch.max(outputs.data, 1)
-                    val_total += labels.size(0)
-                    val_correct += (predicted == labels).sum().item()
-                    val_top3_correct += top_3_accuracy(labels, outputs) * labels.size(0)
-                    loss = criterion(outputs, labels)
-                    validation_loss += loss.item()
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
 
-                val_loss_values.append(validation_loss / len(val_loader))
-                val_accuracy = 100 * val_correct / val_total
-                val_top3_accuracy = 100 * val_top3_correct / val_total
-                val_error.append(100 - val_accuracy)
-                val_3_accuracy.append(val_top3_accuracy)
 
-        # Log Model Performance
-        train_loss_values.append(training_loss)
-        train_error.append(100 - 100 * train_correct / train_total)
-        print(
-            f"Epoch {epoch+1}, Training Loss: {training_loss/len(train_loader)}, Validation Error: {val_error[-1]}, Validation Top-3 Accuracy: {val_3_accuracy[-1]}, Training Error: {train_error[-1]}"
+class MultiModalTwo(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.rnn = RNNModel(vocab, d_embed, d_hidden, 16, dropout=dropout)
+        self.cnn = SENet(64)
+        self.fc = nn.Sequential(nn.Linear(16 + 64, 64), nn.ReLU(), nn.Linear(64, d_out))
+
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
+
+
+class MultiModalThree(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        d_encoding = 64
+        self.rnn = RNNModel(vocab, d_embed, d_hidden, d_encoding, dropout=dropout)
+        self.cnn = SENet(d_encoding)
+
+        # Attention layers
+        self.seq_query = nn.Linear(d_encoding, d_encoding)
+        self.img_keys = nn.Linear(d_encoding, d_encoding)
+        self.img_values = nn.Linear(d_encoding, d_encoding)
+
+        # Fully connected layers
+        self.fc = nn.Sequential(
+            nn.Linear(d_encoding, 64),  # Adjusted to combine attention outputs
+            nn.ReLU(),
+            nn.Linear(64, d_out),
         )
-        for op_params in optimizer.param_groups:
-            op_params["lr"] = op_params["lr"] * learn_decay
-    return train_error, train_loss_values, val_error, val_loss_values, swa_model
+
+    def forward(self, board, sequence, seq_lengths):
+        # Encode sequence of moves
+        seq_encoding = self.rnn(sequence, seq_lengths)
+
+        # Encode board state
+        cnn_encoding = self.cnn(board)
+
+        # Attention mechanism
+        attn_weights = F.softmax(
+            torch.bmm(
+                self.seq_query(seq_encoding).unsqueeze(1),
+                self.img_keys(cnn_encoding).unsqueeze(2),
+            ).squeeze(2),
+            dim=1,
+        )
+        attention_applied = torch.bmm(
+            attn_weights.unsqueeze(1), self.img_values(cnn_encoding).unsqueeze(2)
+        ).squeeze(2)
+
+        # Combining both encodings with attention applied
+        combined_encoding = attention_applied
+
+        # Prediction
+        pred = self.fc(combined_encoding)
+
+        return pred
+
+
+class RNNModel(nn.Module):
+    def __init__(
+        self,
+        vocab,
+        d_embed,
+        d_hidden,
+        d_out,
+        dropout=0.5,
+        num_layers=2,
+        bidirectional=False,
+        embedding_matrix=None,
+    ):
+        super(RNNModel, self).__init__()
+        self.embeddings = nn.Embedding(len(vocab.move_to_id), d_embed)
+        # self.embeddings = nn.Embedding.from_pretrained(embedding_matrix, freeze=False)
+        self.lstm = nn.LSTM(
+            d_embed,
+            d_hidden,
+            dropout=dropout,
+            bidirectional=bidirectional,
+            num_layers=num_layers,
+        )
+        self.fc = nn.Sequential(nn.Linear(d_hidden, d_out))
+
+    def forward(self, x, seq_lengths):
+        x = self.embeddings(x)
+        # Sort x and seq_lengths in descending order
+        # This is required for packing the sequence
+        seq_lengths, perm_idx = seq_lengths.sort(0, descending=True)
+        x = x[perm_idx]
+        # Pack the sequence
+        packed_input = pack_padded_sequence(x, seq_lengths, batch_first=True)
+        # Pass the packed sequence through the LSTM
+        packed_output, (hidden, cell) = self.lstm(packed_input)
+
+        # Unpack the sequence
+        output, _ = pad_packed_sequence(
+            packed_output, batch_first=True, total_length=x.size()[1]
+        )
+        _, unperm_idx = perm_idx.sort(0)
+        unperm_idx = unperm_idx.to(device)
+        output = output.index_select(0, unperm_idx)
+        # This takes all the outputs across the cells
+        mean_pooled = torch.mean(output, dim=1)
+        # output = torch.cat((mean_pooled,hidden[-1]),dim=1)
+        output = self.fc(mean_pooled)
+        return output
+
+
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
+        super(ConvBlock, self).__init__()
+        self.conv = nn.Conv2d(
+            in_channels, out_channels, kernel_size, stride, padding, bias=False
+        )
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.se = SELayer(out_channels)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = F.relu(x)
+        x = self.se(x)
+        return x
+
+
+class SENet(nn.Module):
+    def __init__(self, d_out):
+        super(SENet, self).__init__()
+        self.conv1 = ConvBlock(6, 64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(64 * 8 * 8, d_out)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+
+class ChessCNN(nn.Module):
+    def __init__(self, d_out):
+        super(ChessCNN, self).__init__()
+        # Assuming each channel represents a different piece type (e.g., 6 channels for 6 types each)
+        self.conv1 = nn.Conv2d(6, 64, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)  # Batch normalization for first conv layer
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
+        self.fc1 = nn.Linear(64 * 8 * 8, 64)  # Assuming an 8x8 chess board
+        self.fc2 = nn.Linear(64, d_out)
+
+    def forward(self, x):
+        # Apply first convolution, followed by batch norm, then ReLU
+        x = F.relu(self.bn1(self.conv1(x)))
+        # Apply second convolution, followed by batch norm, then ReLU
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        # Flatten the tensor
+        x = x.view(x.size(0), -1)
+
+        # Apply fully connected layers
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
