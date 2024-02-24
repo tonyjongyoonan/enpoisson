@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import chess
 import random
+import numpy as np
 
 piece_to_index = {
     "p": 0,
@@ -113,7 +114,7 @@ class ChessDataset(Dataset):
         )
 
 
-def df_to_data(df, sampling_rate=1.0, algebraic_notation=True):
+def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
     """
     Input: Dataframe of training data in which each row represents a full game played between players
     Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
@@ -149,10 +150,63 @@ def df_to_data(df, sampling_rate=1.0, algebraic_notation=True):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 label = encoded_moves[i + 1]
-                board_states.append(string_to_array(boards[i].split(" ")[0]))
+                board_states.append(string_to_array_two(boards[i].split(" ")[0]))
                 next_moves.append(label)
-
     return board_states, next_moves, vocab
+
+
+def df_to_data(
+    df,
+    sampling_rate=1,
+    fixed_window=True,
+    fixed_window_size=16,
+    algebraic_notation=True,
+):
+    """
+    Input: Dataframe of training data in which each row represents a full game played between players
+    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
+    """
+    board_states, subsequences, next_moves = [], [], []
+    vocab = Vocabulary()
+    chess_board = chess.Board()
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        boards = game_board.split("*")
+        # Encode the moves into SAN notation and then into corresponding indices
+        encoded_moves = []
+        for move in moves:
+            # Create a move object from the coordinate notation
+            move_obj = chess.Move.from_uci(move)
+            # There are some broken moves in the data -> stop reading if so
+            if move_obj not in chess_board.legal_moves:
+                break
+            else:
+                if algebraic_notation:
+                    algebraic_move = chess_board.san(move_obj)
+                    chess_board.push(move_obj)
+                    vocab.add_move(algebraic_move)
+                    encoded_move = vocab.get_id(algebraic_move)
+                    encoded_moves.append(encoded_move)
+                else:
+                    encoded_move = vocab.get_id(move)
+                    encoded_moves.append(encoded_move)
+        chess_board.reset()
+        boards = boards[: len(encoded_moves)]
+        # Now generate X,Y with sampling
+        for i in range(len(encoded_moves) - 1):
+            # TODO: Figure out how to deal with black orientation 'seeing' a different board
+            if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
+                # Board
+                board_states.append(string_to_array(boards[i].split(" ")[0]))
+                # Sequence of Moves
+                subseq = encoded_moves[0 : i + 1]
+                if fixed_window and len(subseq) > fixed_window_size:
+                    subseq = subseq[-fixed_window_size:]
+                subsequences.append(subseq)
+                # Label
+                label = encoded_moves[i + 1]
+                next_moves.append(label)
+    return subsequences, board_states, next_moves, vocab
 
 
 # Function to calculate top-3 accuracy
@@ -160,3 +214,64 @@ def top_3_accuracy(y_true, y_pred):
     top3 = torch.topk(y_pred, 3, dim=1).indices
     correct = top3.eq(y_true.view(-1, 1).expand_as(top3))
     return correct.any(dim=1).float().mean().item()
+
+
+# Function to pad move sequences & get their sequence lengths
+def pad_sequences(sequences, max_len=None, pad_id=0):
+    if max_len is None:
+        max_len = max(len(seq) for seq in sequences)
+    padded_sequences = np.full((len(sequences), max_len), pad_id, dtype=int)
+    sequence_lengths = np.zeros(len(sequences), dtype=int)
+    for i, seq in enumerate(sequences):
+        length = len(seq)
+        padded_sequences[i, :length] = seq[:length]
+        sequence_lengths[i] = length
+    return padded_sequences, sequence_lengths
+
+
+class MultimodalDataset(Dataset):
+    def __init__(self, sequences, boards, lengths, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        boards, sequences, lengths, labels = (
+            self.boards[idx],
+            self.sequences[idx],
+            self.lengths[idx],
+            self.labels[idx],
+        )
+        return (
+            torch.tensor(boards, dtype=torch.float32),
+            torch.tensor(sequences, dtype=torch.long),
+            torch.tensor(lengths, dtype=torch.long),
+            torch.tensor(labels, dtype=torch.long),
+        )
+
+def is_legal_move(chess_board, move_san):
+    try:
+        chess_move = chess_board.parse_san(move_san)
+        return chess_move in chess_board.legal_moves
+    except ValueError:
+        # This handles cases where the SAN move cannot be parsed or is not legal
+        return False
+
+def load_board_state_from_san(moves):
+    board = chess.Board()
+    for index in moves:
+        try:
+            if index == 0:
+                return board
+            else:
+                move_san = vocab.get_move(index.item())
+                move = board.parse_san(move_san)
+                board.push(move)
+        except ValueError:
+            # Handle invalid moves, e.g., break the loop or log an error
+            break
+    return board
