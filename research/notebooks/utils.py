@@ -197,7 +197,7 @@ def df_to_data(
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 # Board
-                board_states.append(string_to_array(boards[i].split(" ")[0]))
+                board_states.append(string_to_array_two(boards[i].split(" ")[0]))
                 # Sequence of Moves
                 subseq = encoded_moves[0 : i + 1]
                 if fixed_window and len(subseq) > fixed_window_size:
