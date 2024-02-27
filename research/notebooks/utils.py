@@ -253,6 +253,7 @@ class MultimodalDataset(Dataset):
             torch.tensor(labels, dtype=torch.long),
         )
 
+
 def is_legal_move(chess_board, move_san):
     try:
         chess_move = chess_board.parse_san(move_san)
@@ -261,7 +262,8 @@ def is_legal_move(chess_board, move_san):
         # This handles cases where the SAN move cannot be parsed or is not legal
         return False
 
-def load_board_state_from_san(moves):
+
+def load_board_state_from_san(moves, vocab):
     board = chess.Board()
     for index in moves:
         try:
