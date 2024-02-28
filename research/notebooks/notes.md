@@ -1,13 +1,13 @@
 # TODO
 - add more channels (@nate)
-- fix RAM issue 
+- do transfer + finetuning on RNN (token prediction) + CNN (token shape?)
+- combine files
     - https://stackoverflow.com/questions/13780907/is-it-possible-to-np-concatenate-memory-mapped-files
 - experiment: add [CLS] and [SEP] tokens
 - create dataset of 50 positions (tactical plays: check, taking, forks | positional plays: taking the center) -- moves that are very obvious and good, (maybe not perfect), to a decent human player
 - experiment with tony's games
 - experiment with cross attention
 First Item on Later
-- do transfer + finetuning on RNN (token prediction) + CNN (token shape?)
 - do transfer + finetuning (on ELO)
 
 
