@@ -8,6 +8,34 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 INPUT_CHANNELS = 12
 
+class ChessCNN(nn.Module):
+    def __init__(self, d_out):
+        super(ChessCNN, self).__init__()
+        # Assuming each channel represents a different piece type (e.g., 6 channels for 6 types each)
+        self.conv1 = nn.Conv2d(INPUT_CHANNELS, 64, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)  # Batch normalization for first conv layer
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
+        self.fc1 = nn.Linear(64 * 8 * 8, 64)  # Assuming an 8x8 chess board
+        self.fc2 = nn.Linear(64, d_out)
+
+    def forward(self, x):
+        # Apply first convolution, followed by batch norm, then ReLU
+        x = F.relu(self.bn1(self.conv1(x)))
+        # Apply second convolution, followed by batch norm, then ReLU
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        # Flatten the tensor
+        x = x.view(x.size(0), -1)
+
+        # Apply fully connected layers
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+
+        return x
+
 class ChessCNN_no_pooling(nn.Module):
     def __init__(self, d_out):
         super(ChessCNN_no_pooling, self).__init__()
@@ -54,24 +82,6 @@ class ChessCNN_pooling(nn.Module):
         x = self.fc2(x)
 
         return x
-
-
-class SELayer(nn.Module):
-    def __init__(self, channel, reduction=16):
-        super(SELayer, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Sequential(
-            nn.Linear(channel, channel // reduction, bias=False),
-            nn.ReLU(inplace=True),
-            nn.Linear(channel // reduction, channel, bias=False),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, x):
-        b, c, _, _ = x.size()
-        y = self.avg_pool(x).view(b, c)
-        y = self.fc(y).view(b, c, 1, 1)
-        return x * y.expand_as(x)
 
 
 class DenseLayer(nn.Module):
@@ -148,7 +158,206 @@ class DenseNetEncoder(nn.Module):
         out = self.fc(out)
         return out
 
+class ConvBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
+        super(ConvBlock, self).__init__()
+        self.conv = nn.Conv2d(
+            in_channels, out_channels, kernel_size, stride, padding, bias=False
+        )
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.se = SELayer(out_channels)
 
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = F.relu(x)
+        x = self.se(x)
+        return x
+
+class ConvBlockTwo(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
+        super(ConvBlockTwo, self).__init__()
+        self.conv1 = nn.Conv2d(
+            in_channels, out_channels, kernel_size, stride, padding, bias=False
+        )
+        self.conv2 = nn.Conv2d(
+            in_channels, out_channels, kernel_size, stride, padding, bias=False
+        )
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.se = SELayer(out_channels)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = self.bn(x)
+        x = self.se(x)
+        return x
+
+class SELayer(nn.Module):
+    def __init__(self, channel, reduction=16):
+        super(SELayer, self).__init__()
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Sequential(
+            nn.Linear(channel, channel // reduction, bias=False),
+            nn.ReLU(inplace=True),
+            nn.Linear(channel // reduction, channel, bias=False),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        y = self.avg_pool(x).view(b, c)
+        y = self.fc(y).view(b, c, 1, 1)
+        return x * y.expand_as(x)
+    
+class SENet(nn.Module):
+    def __init__(self, d_out):
+        super(SENet, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(64 * 8 * 8, d_out)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+
+
+class SENetTwo(nn.Module):
+    def __init__(self, d_out):
+        super(SENetTwo, self).__init__()
+        self.conv0 = nn.Conv2d(INPUT_CHANNELS, 64, kernel_size = 3, stride = 1, padding = 1)
+        self.conv1 = ConvBlockTwo(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlockTwo(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlockTwo(64, 64, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(64 * 8 * 8, d_out)
+
+    def forward(self, x):
+        x = self.conv0(x)
+        
+        # First ConvBlockTwo
+        identity = x  # Save input for residual connection
+        out = self.conv1(x)
+        out += identity  # Add input (residual connection)
+        out = F.relu(out)  # Apply ReLU activation
+
+        # Second ConvBlockTwo
+        identity = out  # Update identity to output of previous block
+        out = self.conv2(out)
+        out += identity  # Add input (residual connection)
+        out = F.relu(out)  # Apply ReLU activation
+
+        # Third ConvBlockTwo
+        identity = out  # Update identity to output of previous block
+        out = self.conv3(out)
+        out += identity  # Add input (residual connection)
+        out = F.relu(out)  # Apply ReLU activation
+
+        out = out.view(out.size(0), -1)
+        out = self.fc(out)
+        return out
+    
+class RNNModel(nn.Module):
+    def __init__(
+        self,
+        vocab,
+        d_embed,
+        d_hidden,
+        d_out,
+        dropout=0.5,
+        num_layers=2,
+        bidirectional=False,
+        embedding_matrix=None,
+    ):
+        super(RNNModel, self).__init__()
+        self.embeddings = nn.Embedding(len(vocab.move_to_id), d_embed)
+        # self.embeddings = nn.Embedding.from_pretrained(embedding_matrix, freeze=False)
+        self.lstm = nn.LSTM(
+            d_embed,
+            d_hidden,
+            dropout=dropout,
+            bidirectional=bidirectional,
+            num_layers=num_layers,
+        )
+        self.fc = nn.Sequential(nn.Linear(d_hidden, d_out))
+
+    def forward(self, x, seq_lengths):
+        x = self.embeddings(x)
+        # Sort x and seq_lengths in descending order
+        # This is required for packing the sequence
+        seq_lengths, perm_idx = seq_lengths.sort(0, descending=True)
+        x = x[perm_idx]
+        # Pack the sequence
+        packed_input = pack_padded_sequence(x, seq_lengths, batch_first=True)
+        # Pass the packed sequence through the LSTM
+        packed_output, (hidden, cell) = self.lstm(packed_input)
+
+        # Unpack the sequence
+        output, _ = pad_packed_sequence(
+            packed_output, batch_first=True, total_length=x.size()[1]
+        )
+        _, unperm_idx = perm_idx.sort(0)
+        unperm_idx = unperm_idx.to(device, non_blocking=True)
+        output = output.index_select(0, unperm_idx)
+        # This takes all the outputs across the cells
+        mean_pooled = torch.mean(output, dim=1)
+        # output = torch.cat((mean_pooled,hidden[-1]),dim=1)
+        output = self.fc(mean_pooled)
+        return output
+
+class RNNModelTwo(nn.Module):
+    def __init__(
+        self,
+        vocab,
+        d_embed,
+        d_hidden,
+        d_out,
+        dropout=0.5,
+        num_layers=2,
+        bidirectional=False,
+        embedding_matrix=None,
+    ):
+        super(RNNModelTwo, self).__init__()
+        self.embeddings = nn.Embedding(len(vocab.move_to_id), d_embed)
+        # self.embeddings = nn.Embedding.from_pretrained(embedding_matrix, freeze=False)
+        self.lstm = nn.LSTM(
+            d_embed,
+            d_hidden,
+            dropout=dropout,
+            bidirectional=bidirectional,
+            num_layers=num_layers,
+        )
+        self.fc = nn.Sequential(nn.Linear(16*d_hidden, d_out))
+
+    def forward(self, x, seq_lengths):
+        x = self.embeddings(x)
+        # Sort x and seq_lengths in descending order
+        # This is required for packing the sequence
+        seq_lengths, perm_idx = seq_lengths.sort(0, descending=True)
+        x = x[perm_idx]
+        # Pack the sequence
+        packed_input = pack_padded_sequence(x, seq_lengths, batch_first=True)
+        # Pass the packed sequence through the LSTM
+        packed_output, (hidden, cell) = self.lstm(packed_input)
+
+        # Unpack the sequence
+        output, _ = pad_packed_sequence(
+            packed_output, batch_first=True, total_length=x.size()[1]
+        )
+        _, unperm_idx = perm_idx.sort(0)
+        unperm_idx = unperm_idx.to(device, non_blocking=True)
+        output = output.index_select(0, unperm_idx)
+        # This takes all the outputs across the cells
+        output = output.view(output.size(0), -1) 
+        output = self.fc(output)
+        return output
+    
 class MultiModal(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
@@ -161,8 +370,7 @@ class MultiModal(nn.Module):
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
-
-
+    
 class MultiModalTwo(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
@@ -175,6 +383,7 @@ class MultiModalTwo(nn.Module):
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
+
 
 
 class MultiModalThree(nn.Module):
@@ -235,167 +444,16 @@ class MultiModalFour(nn.Module):
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
-
-class ConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
-        super(ConvBlock, self).__init__()
-        self.conv = nn.Conv2d(
-            in_channels, out_channels, kernel_size, stride, padding, bias=False
-        )
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.se = SELayer(out_channels)
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        x = F.relu(x)
-        x = self.se(x)
-        return x
-
-class ConvBlockTwo(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
-        super(ConvBlockTwo, self).__init__()
-        self.conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size, stride, padding, bias=False
-        )
-        self.conv2 = nn.Conv2d(
-            in_channels, out_channels, kernel_size, stride, padding, bias=False
-        )
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.se = SELayer(out_channels)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = self.bn(x)
-        x = self.se(x)
-        return x
-
-class SENet(nn.Module):
-    def __init__(self, d_out):
-        super(SENet, self).__init__()
-        self.conv1 = ConvBlock(INPUT_CHANNELS, 64, kernel_size=3, stride=1, padding=1)
-        self.conv2 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
-        self.conv3 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
-        self.fc = nn.Linear(64 * 8 * 8, d_out)
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-        return x
-
-
-class SENetTwo(nn.Module):
-    def __init__(self, d_out):
-        super(SENetTwo, self).__init__()
-        self.conv0 = nn.Conv2d(INPUT_CHANNELS, 64, kernel_size = 3, stride = 1, padding = 1)
-        self.conv1 = ConvBlockTwo(64, 64, kernel_size=3, stride=1, padding=1)
-        self.conv2 = ConvBlockTwo(64, 64, kernel_size=3, stride=1, padding=1)
-        self.conv3 = ConvBlockTwo(64, 64, kernel_size=3, stride=1, padding=1)
-        self.fc = nn.Linear(64 * 8 * 8, d_out)
-
-    def forward(self, x):
-        x = self.conv0(x)
-        
-        # First ConvBlockTwo
-        identity = x  # Save input for residual connection
-        out = self.conv1(x)
-        out += identity  # Add input (residual connection)
-        out = F.relu(out)  # Apply ReLU activation
-
-        # Second ConvBlockTwo
-        identity = out  # Update identity to output of previous block
-        out = self.conv2(out)
-        out += identity  # Add input (residual connection)
-        out = F.relu(out)  # Apply ReLU activation
-
-        # Third ConvBlockTwo
-        identity = out  # Update identity to output of previous block
-        out = self.conv3(out)
-        out += identity  # Add input (residual connection)
-        out = F.relu(out)  # Apply ReLU activation
-
-        out = out.view(out.size(0), -1)
-        out = self.fc(out)
-        return out
-
-class RNNModel(nn.Module):
-    def __init__(
-        self,
-        vocab,
-        d_embed,
-        d_hidden,
-        d_out,
-        dropout=0.5,
-        num_layers=2,
-        bidirectional=False,
-        embedding_matrix=None,
-    ):
-        super(RNNModel, self).__init__()
-        self.embeddings = nn.Embedding(len(vocab.move_to_id), d_embed)
-        # self.embeddings = nn.Embedding.from_pretrained(embedding_matrix, freeze=False)
-        self.lstm = nn.LSTM(
-            d_embed,
-            d_hidden,
-            dropout=dropout,
-            bidirectional=bidirectional,
-            num_layers=num_layers,
-        )
-        self.fc = nn.Sequential(nn.Linear(d_hidden, d_out))
-
-    def forward(self, x, seq_lengths):
-        x = self.embeddings(x)
-        # Sort x and seq_lengths in descending order
-        # This is required for packing the sequence
-        seq_lengths, perm_idx = seq_lengths.sort(0, descending=True)
-        x = x[perm_idx]
-        # Pack the sequence
-        packed_input = pack_padded_sequence(x, seq_lengths, batch_first=True)
-        # Pass the packed sequence through the LSTM
-        packed_output, (hidden, cell) = self.lstm(packed_input)
-
-        # Unpack the sequence
-        output, _ = pad_packed_sequence(
-            packed_output, batch_first=True, total_length=x.size()[1]
-        )
-        _, unperm_idx = perm_idx.sort(0)
-        unperm_idx = unperm_idx.to(device, non_blocking=True)
-        output = output.index_select(0, unperm_idx)
-        # This takes all the outputs across the cells
-        mean_pooled = torch.mean(output, dim=1)
-        # output = torch.cat((mean_pooled,hidden[-1]),dim=1)
-        output = self.fc(mean_pooled)
-        return output
     
-class ChessCNN(nn.Module):
-    def __init__(self, d_out):
-        super(ChessCNN, self).__init__()
-        # Assuming each channel represents a different piece type (e.g., 6 channels for 6 types each)
-        self.conv1 = nn.Conv2d(INPUT_CHANNELS, 64, kernel_size=3, padding=1)
-        self.bn1 = nn.BatchNorm2d(64)  # Batch normalization for first conv layer
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.bn2 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.bn3 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
-        self.fc1 = nn.Linear(64 * 8 * 8, 64)  # Assuming an 8x8 chess board
-        self.fc2 = nn.Linear(64, d_out)
+class MultiModalFive(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 16, dropout=dropout)
+        self.cnn = SENetTwo(64)
+        self.fc = nn.Sequential(nn.Linear(16 + 64, 64), nn.ReLU(), nn.Linear(64, d_out))
 
-    def forward(self, x):
-        # Apply first convolution, followed by batch norm, then ReLU
-        x = F.relu(self.bn1(self.conv1(x)))
-        # Apply second convolution, followed by batch norm, then ReLU
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        # Flatten the tensor
-        x = x.view(x.size(0), -1)
-
-        # Apply fully connected layers
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-
-        return x
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred

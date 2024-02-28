@@ -1,5 +1,6 @@
 # TODO
 - add more channels (@nate)
+- test UCI vs. SAN again
 - do transfer + finetuning on RNN (token prediction) + CNN (token shape?)
 - combine files
     - https://stackoverflow.com/questions/13780907/is-it-possible-to-np-concatenate-memory-mapped-files
