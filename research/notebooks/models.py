@@ -449,7 +449,7 @@ class MultiModalFive(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
         self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 16, dropout=dropout)
-        self.cnn = SENetTwo(64)
+        self.cnn = SENet(64)
         self.fc = nn.Sequential(nn.Linear(16 + 64, 64), nn.ReLU(), nn.Linear(64, d_out))
 
     def forward(self, board, sequence, seq_lengths):
