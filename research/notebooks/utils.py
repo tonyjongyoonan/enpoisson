@@ -343,7 +343,7 @@ def visualize_heatmap_on_chessboard(chessboard, heatmap):
     plt.colorbar()
     plt.show()
 
-def show_map_on_training_data(vocab, model, train_loader, num_samples = 10):
+def show_maps_on_training_data(vocab, model, train_loader, num_samples = 10):
     # Mapping from tensor indices to chess pieces
     index_to_piece = {
         0: chess.PAWN, 1: chess.ROOK, 2: chess.KNIGHT,

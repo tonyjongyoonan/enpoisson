@@ -6,12 +6,13 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+INPUT_CHANNELS = 12
 
 class ChessCNN_no_pooling(nn.Module):
     def __init__(self, d_out):
         super(ChessCNN_no_pooling, self).__init__()
         # Assuming each channel represents a different piece type (e.g., 6 channels for 6 types each)
-        self.conv1 = nn.Conv2d(12, 36, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(INPUT_CHANNELS, 36, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(36, 64, kernel_size=3, padding=1)
         self.fc1 = nn.Linear(64 * 8 * 8, 128)  # Assuming an 8x8 chess board
         self.fc2 = nn.Linear(128, d_out)
@@ -34,7 +35,7 @@ class ChessCNN_no_pooling(nn.Module):
 class ChessCNN_pooling(nn.Module):
     def __init__(self, d_out):
         super(ChessCNN_pooling, self).__init__()
-        self.conv1 = nn.Conv2d(6, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(INPUT_CHANNELS, 64, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.pool = nn.MaxPool2d(2, 2)  # Pooling layer to reduce spatial dimensions
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -117,7 +118,7 @@ class DenseNetEncoder(nn.Module):
         super(DenseNetEncoder, self).__init__()
         # Initial convolution
         self.init_conv = nn.Conv2d(
-            6, 64, kernel_size=3, stride=1, padding=1, bias=False
+            INPUT_CHANNELS, 64, kernel_size=3, stride=1, padding=1, bias=False
         )
 
         # Dense Blocks and Transition Layers with SE Blocks
@@ -263,7 +264,7 @@ class RNNModel(nn.Module):
             packed_output, batch_first=True, total_length=x.size()[1]
         )
         _, unperm_idx = perm_idx.sort(0)
-        unperm_idx = unperm_idx.to(device)
+        unperm_idx = unperm_idx.to(device, non_blocking=True)
         output = output.index_select(0, unperm_idx)
         # This takes all the outputs across the cells
         mean_pooled = torch.mean(output, dim=1)
@@ -292,7 +293,7 @@ class ConvBlock(nn.Module):
 class SENet(nn.Module):
     def __init__(self, d_out):
         super(SENet, self).__init__()
-        self.conv1 = ConvBlock(6, 64, kernel_size=3, stride=1, padding=1)
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 64, kernel_size=3, stride=1, padding=1)
         self.conv2 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
         self.conv3 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
         self.fc = nn.Linear(64 * 8 * 8, d_out)
@@ -310,7 +311,7 @@ class ChessCNN(nn.Module):
     def __init__(self, d_out):
         super(ChessCNN, self).__init__()
         # Assuming each channel represents a different piece type (e.g., 6 channels for 6 types each)
-        self.conv1 = nn.Conv2d(6, 64, kernel_size=3, padding=1)
+        self.conv1 = nn.Conv2d(INPUT_CHANNELS, 64, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm2d(64)  # Batch normalization for first conv layer
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
         self.bn2 = nn.BatchNorm2d(64)  # Batch normalization for second conv layer
