@@ -1,20 +1,59 @@
 import torch
+import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 import chess
 import random
 import numpy as np
+import dask.dataframe as dd 
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
 
-piece_to_index = {
-    "p": 0,
-    "r": 1,
-    "b": 2,
-    "n": 3,
-    "q": 4,
-    "k": 5,
-}
+""" Data Processing """
+def process_raw_csv(filepath):
+    # Import CSV File (from Maia: http://csslab.cs.toronto.edu/datasets/#monthly_chess_csv)
+    # The CSV has 151,072,060 rows
+    data_types ={'clock': 'float32',
+        'cp': 'object',
+        'opp_clock': 'float32',
+        'opp_clock_percent': 'float32'}
+    df = dd.read_csv(filepath, blocksize='64e6', dtype= data_types, low_memory=False)
 
+    # Filter out quick games (Bullet and HyperBullet) and take out moves that happened in the last XX seconds (this won't affect how many games we import but the # of moves we look at)
+    condition_time_control = ~df['time_control'].isin(['Bullet', 'HyperBullet'])
+    condition_clock = df['clock'] > 45
+    # condition_plays = df['num_ply'] < 80
+    filtered_df = df[condition_time_control & condition_clock]
 
-def string_to_array(string):
+    # Select Relevant Columns
+    selected_columns = ['game_id','white_elo','black_elo','move','white_active','board']
+    filtered_df = filtered_df[selected_columns]
+
+    # Filter only games of Elo 1100-1199
+    filtered_df = filtered_df[(filtered_df['white_elo'].between(1100, 1199)) & (filtered_df['black_elo'].between(1100, 1199))]
+
+    # Group Same Games Together 
+    def aggregate_moves(group):
+        moves = ' '.join(group['move'])  # Concatenate moves into a single string
+        white_elo = group['white_elo'].iloc[0]  # Get the first white_elo
+        black_elo = group['black_elo'].iloc[0]  # Get the first black_elo
+        white_active = group['white_active'].iloc[0]  # Get the first num_ply
+        board = '*'.join(group['board'])  # Get the first num_ply
+        return pd.Series({'moves': moves, 'white_elo': white_elo, 'black_elo': black_elo, 'white_active': white_active, 'board': board})
+
+    grouped_df = filtered_df.groupby('game_id',sort=True).apply(aggregate_moves, meta={'moves': 'str', 'white_elo': 'int', 'black_elo': 'int', 'white_active': 'str', 'board': 'str'}).compute()
+
+    # This gives us 99,300 Games when we don't filter games with more than 80 half-moves
+    return grouped_df
+
+def fen_to_array(string):
+    piece_to_index = {
+        "p": 0,
+        "r": 1,
+        "b": 2,
+        "n": 3,
+        "q": 4,
+        "k": 5,
+    }
     rows = string.split("/")
     ans = [[[0 for a in range(8)] for b in range(8)] for c in range(6)]
     for row in range(8):
@@ -38,7 +77,7 @@ def string_to_array(string):
     return ans
 
 
-def string_to_array_two(string):
+def fen_to_array_two(string):
     rows = string.split("/")
     # Adjusted to 12 to account for separate layers for black and white pieces of each type
     ans = [[[0 for a in range(8)] for b in range(8)] for c in range(12)]
@@ -74,46 +113,7 @@ def string_to_array_two(string):
     # channels 21-22 is for castles
 
     return ans
-
-
-""" This vocabulary is simply to turn the labels (predicted move) into integers which PyTorch Models can understand"""
-
-
-class Vocabulary:
-    def __init__(self):
-        self.move_to_id = {"<UNK>": 0}
-        self.id_to_move = {0: "<UNK>"}
-        self.index = 1  # Start indexing from 1
-
-    def add_move(self, move):
-        if move not in self.move_to_id:
-            self.move_to_id[move] = self.index
-            self.id_to_move[self.index] = move
-            self.index += 1
-
-    def get_id(self, move):
-        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
-
-    def get_move(self, id):
-        return self.id_to_move.get(id, self.id_to_move[0])
-
-
-class ChessDataset(Dataset):
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        features, label = self.X[idx], self.Y[idx]
-
-        return torch.tensor(features, dtype=torch.float32), torch.tensor(
-            label, dtype=torch.long
-        )
-
-
+    
 def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
     """
     Input: Dataframe of training data in which each row represents a full game played between players
@@ -150,7 +150,7 @@ def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 label = encoded_moves[i + 1]
-                board_states.append(string_to_array_two(boards[i].split(" ")[0]))
+                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
                 next_moves.append(label)
     return board_states, next_moves, vocab
 
@@ -197,7 +197,7 @@ def df_to_data(
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 # Board
-                board_states.append(string_to_array_two(boards[i].split(" ")[0]))
+                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
                 # Sequence of Moves
                 subseq = encoded_moves[0 : i + 1]
                 if fixed_window and len(subseq) > fixed_window_size:
@@ -228,6 +228,45 @@ def pad_sequences(sequences, max_len=None, pad_id=0):
         sequence_lengths[i] = length
     return padded_sequences, sequence_lengths
 
+""" Objects """
+
+
+""" This vocabulary is simply to turn the labels (predicted move) into integers which PyTorch Models can understand"""
+
+
+class Vocabulary:
+    def __init__(self):
+        self.move_to_id = {"<UNK>": 0}
+        self.id_to_move = {0: "<UNK>"}
+        self.index = 1  # Start indexing from 1
+
+    def add_move(self, move):
+        if move not in self.move_to_id:
+            self.move_to_id[move] = self.index
+            self.id_to_move[self.index] = move
+            self.index += 1
+
+    def get_id(self, move):
+        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
+
+    def get_move(self, id):
+        return self.id_to_move.get(id, self.id_to_move[0])
+
+
+class ChessDataset(Dataset):
+    def __init__(self, X, Y):
+        self.X = X
+        self.Y = Y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        features, label = self.X[idx], self.Y[idx]
+
+        return torch.tensor(features, dtype=torch.float32), torch.tensor(
+            label, dtype=torch.long
+        )
 
 class MultimodalDataset(Dataset):
     def __init__(self, sequences, boards, lengths, labels):
@@ -240,20 +279,14 @@ class MultimodalDataset(Dataset):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        boards, sequences, lengths, labels = (
-            self.boards[idx],
-            self.sequences[idx],
-            self.lengths[idx],
-            self.labels[idx],
-        )
         return (
-            torch.tensor(boards, dtype=torch.float32),
-            torch.tensor(sequences, dtype=torch.long),
-            torch.tensor(lengths, dtype=torch.long),
-            torch.tensor(labels, dtype=torch.long),
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            torch.tensor(self.labels[idx], dtype=torch.long),
         )
 
-
+""" Analysis """
 def is_legal_move(chess_board, move_san):
     try:
         chess_move = chess_board.parse_san(move_san)
@@ -277,3 +310,86 @@ def load_board_state_from_san(moves, vocab):
             # Handle invalid moves, e.g., break the loop or log an error
             break
     return board
+
+
+def convert_to_grayscale(image):
+    # Assuming 'image' is a numpy array of shape (12, height, width)
+    # Convert to grayscale by averaging the channels
+
+    grayscale_image = image.mean(axis=0).mean(axis=0)
+
+    return grayscale_image
+
+def visualize_heatmap_on_chessboard(chessboard, heatmap):
+
+
+    # Convert the 12-channel chessboard to a grayscale image for visualization
+    grayscale_chessboard = convert_to_grayscale(chessboard)
+    # Normalize the grayscale chessboard for visualization
+    normalized_chessboard = grayscale_chessboard / grayscale_chessboard.max()
+
+    zeros_channel = np.zeros_like(normalized_chessboard)
+    
+    three_channel_chessboard = np.stack((normalized_chessboard,zeros_channel,zeros_channel), axis=-1)
+
+    # Ensure the heatmap is in the correct format and resize it to match the chessboard image
+    heatmap_resized = np.resize(heatmap, (grayscale_chessboard.shape[0], grayscale_chessboard.shape[1]))
+    heatmap_resized = np.stack((heatmap_resized,zeros_channel,zeros_channel), axis=-1)
+    # Overlay the heatmap on the grayscale chessboard
+    visualization = show_cam_on_image(three_channel_chessboard, heatmap_resized, use_rgb=True)
+
+    # Display the visualization
+    plt.imshow(visualization, cmap='hot')
+    plt.colorbar()
+    plt.show()
+
+def show_map_on_training_data(vocab, model, train_loader, num_samples = 10):
+    # Mapping from tensor indices to chess pieces
+    index_to_piece = {
+        0: chess.PAWN, 1: chess.ROOK, 2: chess.KNIGHT,
+        3: chess.BISHOP, 4: chess.QUEEN, 5: chess.KING,
+        6: chess.PAWN, 7: chess.ROOK, 8: chess.KNIGHT,
+        9: chess.BISHOP, 10: chess.QUEEN, 11: chess.KING
+    }
+
+    model.eval()
+    # Assuming ChessCNN_no_pooling is your model class
+    target_layers = [model.conv2]  # Use the last conv layer
+
+    # Initialize GradCAM with the model and target layers
+    cam = GradCAM(model=model, target_layers=target_layers)
+
+    # Assuming your data loader is named 'data_loader'
+    i = 0
+    for image, labels in train_loader:  # Iterate over your data
+        # Specify the target; if None, the highest scoring category will be used
+        # For simplicity, we're using None here
+        if i > 0 and i < num_samples:
+            _, predicted = torch.max(model(image).data, 1)
+            print(vocab.get_move(predicted.item()))
+            print(vocab.get_move(labels.item()))
+            targets = None
+            # Generate the CAM mask
+            grayscale_cam = cam(input_tensor=image, targets=targets)
+            # Visualize the first image in the batch
+            visualize_heatmap_on_chessboard(image, grayscale_cam)
+
+            # This is 
+            board = chess.Board(None)  # Start with an empty board
+            image = image.sum(axis=0)
+            # Iterate over the tensor to place pieces on the board
+            for channel, piece_type in index_to_piece.items():
+                for row in range(8):
+                    for col in range(8):
+                        if image[channel, row, col] > 0:  # Assuming nonzero value indicates presence of a piece
+                            piece_color = chess.WHITE if channel < 6 else chess.BLACK
+                            piece = chess.Piece(piece_type, piece_color)
+                            square = chess.square(col, 7-row)  # chess.square() needs file index (0-7) and rank index (0-7)
+                            board.set_piece_at(square, piece)
+
+            # Now, 'board' contains the chessboard representation. You can print it as text:
+            print(board)
+            print("\n---------------------\n")
+        elif i > num_samples:
+            break
+        i += 1
