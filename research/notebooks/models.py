@@ -254,7 +254,7 @@ class ConvBlock(nn.Module):
 
 class ConvBlockTwo(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
-        super(ConvBlock, self).__init__()
+        super(ConvBlockTwo, self).__init__()
         self.conv1 = nn.Conv2d(
             in_channels, out_channels, kernel_size, stride, padding, bias=False
         )
