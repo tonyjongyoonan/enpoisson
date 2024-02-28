@@ -2,11 +2,14 @@ import torch
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 import chess
+import torch.nn as nn
 import random
 import numpy as np
 import dask.dataframe as dd 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 """ Data Processing """
 def process_raw_csv(filepath):
@@ -343,7 +346,31 @@ def visualize_heatmap_on_chessboard(chessboard, heatmap):
     plt.colorbar()
     plt.show()
 
-def show_maps_on_training_data(vocab, model, train_loader, num_samples = 10):
+def show_maps_on_training_data(vocab, model, train_loader, num_samples = 10, conv2 = True, multimodal = False):
+    class ModelWrapper(nn.Module):
+        def __init__(self, original_model):
+            super(ModelWrapper, self).__init__()
+            self.original_model = original_model
+
+        def forward(self, combined_input):
+            # Split the combined_input tensor into the expected inputs for the original model
+            input1, input2, input3 = self.split_inputs(combined_input)
+            # Forward these inputs through the original model
+            return self.original_model(input1, input2, input3)
+
+        def split_inputs(self, combined_input):
+            # Assuming 'combined_input' was concatenated along a new last dimension
+            # Adjust the slicing based on how you concatenated the tensors
+            input1 = combined_input[:, :, :, :, 0]  # Shape: [1, 12, 8, 8]
+            input2 = combined_input[:, 0, 0, 0, 1]  # Shape: [1, 16], needs further reshaping
+            input3 = combined_input[0, 0, 0, 0, 2]  # Scalar, needs further reshaping
+
+            # Reshape 'input2' and 'input3' to their original shapes
+            input2 = input2.view(1, -1)  # Assuming the original shape was [1, 16]
+            input3 = input3.view(1)     # Assuming the original shape was [1]
+
+            return input1, input2, input3
+
     # Mapping from tensor indices to chess pieces
     index_to_piece = {
         0: chess.PAWN, 1: chess.ROOK, 2: chess.KNIGHT,
@@ -354,42 +381,90 @@ def show_maps_on_training_data(vocab, model, train_loader, num_samples = 10):
 
     model.eval()
     # Assuming ChessCNN_no_pooling is your model class
-    target_layers = [model.conv2]  # Use the last conv layer
-
+    if conv2:
+        target_layers = [model.conv2]  # Use the last conv layer
+    else: 
+        target_layers = [model.fc]
     # Initialize GradCAM with the model and target layers
     cam = GradCAM(model=model, target_layers=target_layers)
 
-    # Assuming your data loader is named 'data_loader'
+    # multimodal part is.... gg
     i = 0
-    for image, labels in train_loader:  # Iterate over your data
-        # Specify the target; if None, the highest scoring category will be used
-        # For simplicity, we're using None here
-        if i > 0 and i < num_samples:
-            _, predicted = torch.max(model(image).data, 1)
-            print(vocab.get_move(predicted.item()))
-            print(vocab.get_move(labels.item()))
-            targets = None
-            # Generate the CAM mask
-            grayscale_cam = cam(input_tensor=image, targets=targets)
-            # Visualize the first image in the batch
-            visualize_heatmap_on_chessboard(image, grayscale_cam)
+    if multimodal:
+        cam = GradCAM(model=ModelWrapper(model), target_layers=target_layers)
+        for boards, sequences, lengths, labels in train_loader:  # Iterate over your data
+            # Specify the target; if None, the highest scoring category will be used
+            # For simplicity, we're using None here
+            if i > 0 and i < num_samples:
+                boards, sequences, lengths, labels = boards.to(device, non_blocking = True), sequences.to(device, non_blocking = True), lengths, labels.to(device, non_blocking = True)
+                _, predicted = torch.max(model(boards, sequences, lengths).data, 1)
+                print(model(boards, sequences, lengths).data.shape)
+                print(vocab.get_move(predicted.item()))
+                print(vocab.get_move(labels.item()))
+                targets = None
+                # Expand dimensions of 'sequences' and 'lengths' to match 'boards'
+                sequences_expanded = sequences.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # Now it's [1, 16, 1, 1, 1]
+                lengths_expanded = lengths.unsqueeze(-1).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)  # Now it's [1, 1, 1, 1, 1]
+                print(boards.unsqueeze(-1).shape)
+                print(sequences_expanded.shape)
+                print(lengths_expanded.shape)
+                # Concatenate along a new dimension
+                combined_input = torch.cat((boards.unsqueeze(-1), sequences_expanded, lengths_expanded.to(device, non_blocking = True)), dim=-1)
 
-            # This is 
-            board = chess.Board(None)  # Start with an empty board
-            image = image.sum(axis=0)
-            # Iterate over the tensor to place pieces on the board
-            for channel, piece_type in index_to_piece.items():
-                for row in range(8):
-                    for col in range(8):
-                        if image[channel, row, col] > 0:  # Assuming nonzero value indicates presence of a piece
-                            piece_color = chess.WHITE if channel < 6 else chess.BLACK
-                            piece = chess.Piece(piece_type, piece_color)
-                            square = chess.square(col, 7-row)  # chess.square() needs file index (0-7) and rank index (0-7)
-                            board.set_piece_at(square, piece)
+                # Generate the CAM mask
+                grayscale_cam = cam(input_tensor=combined_input, targets=targets)
+                # Visualize the first image in the batch
+                visualize_heatmap_on_chessboard(boards, grayscale_cam)
 
-            # Now, 'board' contains the chessboard representation. You can print it as text:
-            print(board)
-            print("\n---------------------\n")
-        elif i > num_samples:
-            break
-        i += 1
+                # This is 
+                board = chess.Board(None)  # Start with an empty board
+                image = boards.sum(axis=0)
+                # Iterate over the tensor to place pieces on the board
+                for channel, piece_type in index_to_piece.items():
+                    for row in range(8):
+                        for col in range(8):
+                            if image[channel, row, col] > 0:  # Assuming nonzero value indicates presence of a piece
+                                piece_color = chess.WHITE if channel < 6 else chess.BLACK
+                                piece = chess.Piece(piece_type, piece_color)
+                                square = chess.square(col, 7-row)  # chess.square() needs file index (0-7) and rank index (0-7)
+                                board.set_piece_at(square, piece)
+
+                # Now, 'board' contains the chessboard representation. You can print it as text:
+                print(board)
+                print("\n---------------------\n")
+            elif i > num_samples:
+                break
+            i += 1
+    else:
+        for image, labels in train_loader:  # Iterate over your data
+            # Specify the target; if None, the highest scoring category will be used
+            # For simplicity, we're using None here
+            if i > 0 and i < num_samples:
+                _, predicted = torch.max(model(image).data, 1)
+                print(vocab.get_move(predicted.item()))
+                print(vocab.get_move(labels.item()))
+                targets = None
+                # Generate the CAM mask
+                grayscale_cam = cam(input_tensor=image, targets=targets)
+                # Visualize the first image in the batch
+                visualize_heatmap_on_chessboard(image, grayscale_cam)
+
+                # This is 
+                board = chess.Board(None)  # Start with an empty board
+                image = image.sum(axis=0)
+                # Iterate over the tensor to place pieces on the board
+                for channel, piece_type in index_to_piece.items():
+                    for row in range(8):
+                        for col in range(8):
+                            if image[channel, row, col] > 0:  # Assuming nonzero value indicates presence of a piece
+                                piece_color = chess.WHITE if channel < 6 else chess.BLACK
+                                piece = chess.Piece(piece_type, piece_color)
+                                square = chess.square(col, 7-row)  # chess.square() needs file index (0-7) and rank index (0-7)
+                                board.set_piece_at(square, piece)
+
+                # Now, 'board' contains the chessboard representation. You can print it as text:
+                print(board)
+                print("\n---------------------\n")
+            elif i > num_samples:
+                break
+            i += 1
