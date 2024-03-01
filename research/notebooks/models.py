@@ -334,6 +334,8 @@ class RNNModelTwo(nn.Module):
             num_layers=num_layers,
         )
         self.fc = nn.Sequential(nn.Linear(16*d_hidden, d_out))
+        if bidirectional:
+            self.fc = nn.Sequential(nn.Linear(2*16*d_hidden, d_out))
 
     def forward(self, x, seq_lengths):
         x = self.embeddings(x)
@@ -449,8 +451,21 @@ class MultiModalFive(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
         self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 64, dropout=dropout)
-        self.cnn = SENet(64)
-        self.fc = nn.Sequential(nn.Linear(64 + 64, 256), nn.ReLU(), nn.Linear(256, d_out))
+        self.cnn = SENet(128)
+        self.fc = nn.Sequential(nn.Linear(64 + 128, 256), nn.ReLU(), nn.Linear(256, d_out))
+
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
+    
+class MultiModalSix(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 64, dropout=dropout, bidirectional=True)
+        self.cnn = SENet(128)
+        self.fc = nn.Sequential(nn.Linear(64 + 128, 256), nn.ReLU(), nn.Linear(256, d_out))
 
     def forward(self, board, sequence, seq_lengths):
         seq_encoding = self.rnn(sequence, seq_lengths)
