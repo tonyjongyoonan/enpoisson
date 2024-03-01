@@ -472,3 +472,16 @@ class MultiModalSix(nn.Module):
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
+    
+class MultiModalSeven(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 64, dropout=dropout, bidirectional=True)
+        self.cnn = SENet(128)
+        self.fc = nn.Sequential(nn.Linear(64 + 128, 256), nn.ReLU(), nn.Linear(256, d_out))
+
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
