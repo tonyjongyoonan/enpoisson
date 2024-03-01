@@ -12,6 +12,8 @@
 - experiment with tony's games
 First Item on Later
 - do transfer + finetuning (on ELO)
+- test global averaging + more channels vs. flattening
+- play around with RL paradigms to explore unseen board positions
 
 
 ## Long-Term/Architectural Experiments
