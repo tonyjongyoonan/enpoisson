@@ -211,7 +211,7 @@ class SELayer(nn.Module):
         y = self.avg_pool(x).view(b, c)
         y = self.fc(y).view(b, c, 1, 1)
         return x * y.expand_as(x)
-    
+
 class SENet(nn.Module):
     def __init__(self, d_out):
         super(SENet, self).__init__()
@@ -228,7 +228,19 @@ class SENet(nn.Module):
         x = self.fc(x)
         return x
 
+class SENet_Channel_Wise(nn.Module):
+    def __init__(self, d_out):
+        super(SENet_Channel_Wise, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 64, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(64, 64, kernel_size=3, stride=1, padding=1)
 
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        return x.view(x.size(0), x.size(1), -1)
+    
 class SENetTwo(nn.Module):
     def __init__(self, d_out):
         super(SENetTwo, self).__init__()
@@ -329,6 +341,49 @@ class RNNModel(nn.Module):
         output = self.fc(mean_pooled)
         return output
 
+class RNNModel_Token_Wise(nn.Module):
+    def __init__(
+        self,
+        vocab,
+        d_embed,
+        d_hidden,
+        dropout=0.5,
+        num_layers=2,
+        bidirectional=False,
+        embedding_matrix=None,
+    ):
+        super(RNNModel_Token_Wise, self).__init__()
+        self.embeddings = nn.Embedding(len(vocab.move_to_id), d_embed)
+        # self.embeddings = nn.Embedding.from_pretrained(embedding_matrix, freeze=False)
+        self.lstm = nn.LSTM(
+            d_embed,
+            d_hidden,
+            dropout=dropout,
+            bidirectional=bidirectional,
+            num_layers=num_layers,
+        )
+
+    def forward(self, x, seq_lengths):
+        x = self.embeddings(x)
+        # Sort x and seq_lengths in descending order
+        # This is required for packing the sequence
+        seq_lengths, perm_idx = seq_lengths.sort(0, descending=True)
+        x = x[perm_idx]
+        # Pack the sequence
+        packed_input = pack_padded_sequence(x, seq_lengths, batch_first=True)
+        # Pass the packed sequence through the LSTM
+        packed_output, (hidden, cell) = self.lstm(packed_input)
+
+        # Unpack the sequence
+        output, _ = pad_packed_sequence(
+            packed_output, batch_first=True, total_length=x.size()[1]
+        )
+        _, unperm_idx = perm_idx.sort(0)
+        unperm_idx = unperm_idx.to(device, non_blocking=True)
+        output = output.index_select(0, unperm_idx)
+        # This takes all the outputs across the cells
+        return output
+    
 class RNNModelTwo(nn.Module):
     def __init__(
         self,
@@ -407,48 +462,49 @@ class MultiModalTwo(nn.Module):
 
 
 class MultiModalThree(nn.Module):
-    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+    def __init__(self, vocab, d_embed, d_encoding, d_out, dropout=0.5) -> None:
         super().__init__()
-        d_encoding = 64
-        self.rnn = RNNModel(vocab, d_embed, d_hidden, d_encoding, dropout=dropout)
-        self.cnn = SENet(d_encoding)
+        # rnn needs to output 64 dimensions per token so it can interact with the 8x8 board
+        # channels is kind of like "heads" here
+        self.rnn = RNNModel_Token_Wise(vocab, d_embed, 64, dropout=dropout)
+        self.cnn = SENet_Channel_Wise(d_encoding)
 
         # Attention layers
-        self.seq_query = nn.Linear(d_encoding, d_encoding)
-        self.img_keys = nn.Linear(d_encoding, d_encoding)
-        self.img_values = nn.Linear(d_encoding, d_encoding)
+        self.seq_query = nn.Linear(64, 64)
+        self.img_keys = nn.Linear(64, 64)
+        self.img_values = nn.Linear(64, 64)
 
         # Fully connected layers
         self.fc = nn.Sequential(
-            nn.Linear(d_encoding, 64),  # Adjusted to combine attention outputs
+            nn.Linear(16*64, 64),  # Adjusted to combine attention outputs
             nn.ReLU(),
             nn.Linear(64, d_out),
         )
 
     def forward(self, board, sequence, seq_lengths):
         # Encode sequence of moves
-        seq_encoding = self.rnn(sequence, seq_lengths)
+        seq_encoding = self.rnn(sequence, seq_lengths)  # [batch_size, seq_length, d_dimensions]
 
         # Encode board state
-        cnn_encoding = self.cnn(board)
+        cnn_encoding = self.cnn(board)  # [batch_size, channels, d_dimensions]
 
-        # Attention mechanism
-        attn_weights = F.softmax(
-            torch.bmm(
-                self.seq_query(seq_encoding).unsqueeze(1),
-                self.img_keys(cnn_encoding).unsqueeze(2),
-            ).squeeze(2),
-            dim=1,
-        )
-        attention_applied = torch.bmm(
-            attn_weights.unsqueeze(1), self.img_values(cnn_encoding).unsqueeze(2)
-        ).squeeze(2)
+        Q = self.seq_query(seq_encoding)
+        K = self.img_keys(cnn_encoding)
+        V = self.img_values(cnn_encoding)
 
-        # Combining both encodings with attention applied
-        combined_encoding = attention_applied
+        # Compute attention scores
+        # Ensure dimensions are compatible for bmm (e.g., [batch_size, seq_length, d_dimensions] @ [batch_size, d_dimensions, channels])
+        attn_scores = torch.bmm(Q, K.transpose(1, 2))  # [batch_size, seq_length, channels]
+
+        # Normalize attention scores
+        attn_weights = F.softmax(attn_scores, dim=-1)  # [batch_size, seq_length, channels]
+
+        # Apply attention to values (still using cnn_encoding as values)
+        attention_applied = torch.bmm(attn_weights, V.transpose(1, 2))  # [batch_size, seq_length, d_dimensions]
 
         # Prediction
-        pred = self.fc(combined_encoding)
+        attention_applied = attention_applied.view(attention_applied.size(0),-1)
+        pred = self.fc(attention_applied) 
 
         return pred
 

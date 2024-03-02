@@ -1,5 +1,9 @@
 # TODO
 - experiment with cross attention
+    - [0] working on right now -> cross attention in which seq are queries, and cnn is key + value
+    - full transformer cross-attention
+    - also experiment with replacing RNN with transformer (but give it more history moves)
+    - [1] let's go here right away -> self attention transformer on cnn (including past 4 moves), do positional encoding on each move
 - find best CNN model as large as I can go (then train and transfer)
 - find best RNN/transformer model (then train and transfer)
     - experiment: add [CLS] and [SEP] tokens
@@ -26,7 +30,7 @@ First Item on Later
 
 ## Things to Do At The End
 - finalize multimodal architecture
-- train on full dataset on GPUs, LR warm up, SWA after 25+ epochs (garuntees +1 test accuracy) 
+- train on full dataset on GPUs, do hyperparameter tuning (batch size, learning rate, weight decay), LR warm up, SWA after 25+ epochs (garuntees +1 test accuracy) 
 
 # Notes 
 
