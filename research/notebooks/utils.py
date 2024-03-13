@@ -144,6 +144,7 @@ def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
                     encoded_move = vocab.get_id(algebraic_move)
                     encoded_moves.append(encoded_move)
                 else:
+                    vocab.add_move(move)
                     encoded_move = vocab.get_id(move)
                     encoded_moves.append(encoded_move)
         chess_board.reset()
@@ -181,7 +182,7 @@ def df_to_data(
             # Create a move object from the coordinate notation
             move_obj = chess.Move.from_uci(move)
             # There are some broken moves in the data -> stop reading if so
-            if move_obj not in chess_board.legal_moves:
+            if algebraic_notation and move_obj not in chess_board.legal_moves:
                 break
             else:
                 if algebraic_notation:
@@ -191,6 +192,7 @@ def df_to_data(
                     encoded_move = vocab.get_id(algebraic_move)
                     encoded_moves.append(encoded_move)
                 else:
+                    vocab.add_move(move)
                     encoded_move = vocab.get_id(move)
                     encoded_moves.append(encoded_move)
         chess_board.reset()
@@ -210,66 +212,6 @@ def df_to_data(
                 label = encoded_moves[i + 1]
                 next_moves.append(label)
     return subsequences, board_states, next_moves, vocab
-
-def df_to_data_extended(
-    df,
-    sampling_rate=1,
-    fixed_window=True,
-    fixed_window_size=16,
-    algebraic_notation=True,
-):
-    """
-    Input: Dataframe of training data in which each row represents a full game played between players
-    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
-    """
-    board_histories, subsequences, next_moves = [], [], []
-    vocab = Vocabulary()
-    chess_board = chess.Board()
-    for game_board, game_moves in zip(df["board"], df["moves"]):
-        moves = game_moves.split()
-        boards = game_board.split("*")
-        # Encode the moves into SAN notation and then into corresponding indices
-        encoded_moves = []
-        for move in moves:
-            # Create a move object from the coordinate notation
-            move_obj = chess.Move.from_uci(move)
-            # There are some broken moves in the data -> stop reading if so
-            if move_obj not in chess_board.legal_moves:
-                break
-            else:
-                if algebraic_notation:
-                    algebraic_move = chess_board.san(move_obj)
-                    chess_board.push(move_obj)
-                    vocab.add_move(algebraic_move)
-                    encoded_move = vocab.get_id(algebraic_move)
-                    encoded_moves.append(encoded_move)
-                else:
-                    encoded_move = vocab.get_id(move)
-                    encoded_moves.append(encoded_move)
-        chess_board.reset()
-        boards = boards[: len(encoded_moves)]
-        # Now generate X,Y with sampling
-        for i in range(len(encoded_moves) - 1):
-            # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
-                board_history = []
-                # Sequence of Moves
-                subseq = encoded_moves[0 : i + 1]
-                if fixed_window and len(subseq) > fixed_window_size:
-                    subseq = subseq[-fixed_window_size:]
-                    for j in range (i+1-fixed_window_size,i+1):
-                        board_history.append(fen_to_array_two(boards[j].split(" ")[0]))
-                else: 
-                    for j in range (0,i+1):
-                        board_history.append(fen_to_array_two(boards[j].split(" ")[0]))
-                    for j in range(i+1, fixed_window_size):
-                        board_history.append([[[0 for x in range(8)] for y in range (8)] for z in range(12)])
-                subsequences.append(subseq)
-                # Label
-                label = encoded_moves[i + 1]
-                next_moves.append(label)
-                board_histories.append(board_history)
-    return subsequences, board_histories, next_moves, vocab
 
 # Function to calculate top-3 accuracy
 def top_3_accuracy(y_true, y_pred):

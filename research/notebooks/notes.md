@@ -1,21 +1,19 @@
 # TODO
-- test UCI vs. SAN again (on local machine, using haha_longer.csv and doing df_data twice)
-- create memmaps with special tokens (need to repeat everything breh... also add channels + include FEN to allow cross attention jawns)
+- test UCI vs. SAN again (on local machine, using haha_longer.csv and doing df_data twice) @ 3/13
+- create memmaps with special tokens (need to repeat everything breh... also add channels + include FEN to allow cross attention jawns) @ 3/16
     - repeat for other months
     - train new multimodal model (on 6 months + special tokens + potentially transformers)
     - train with batch size of 8
-- experiment with cross attention
-    - [0] working on right now -> cross attention in which seq are queries, and cnn is key + value
-    - full transformer cross-attention
-    - also experiment with replacing RNN with transformer (but give it more history moves)
-    - [1] let's go here right away -> self attention transformer on cnn (including past 4 moves), do positional encoding on each move
+    - combine files
+        -   https://stackoverflow.com/questions/13780907/is-it-possible-to-np-concatenate-memory-mapped-files
+- experiment with cross attention @ 3/17
+    - [0] start with CNN encodings and just one big MLP
+    - [1] self attention transformer on cnn (including past 8 moves), do positional encoding on each move
 - scaling 2.0 
     - find best CNN model as large as I can go (then train and transfer)
     - find best RNN/transformer model (then train and transfer)
     - transfer and fine-tune multimodal
 - do transfer + finetuning on RNN (token prediction)
-- combine files
-    - https://stackoverflow.com/questions/13780907/is-it-possible-to-np-concatenate-memory-mapped-files
 - create dataset of 50 positions (tactical plays: check, taking, forks | positional plays: taking the center) -- moves that are very obvious and good, (maybe not perfect), to a decent human player
 First Item on Later
 - do pretraining (on all ELOs) + finetuning (on ELO)
@@ -49,3 +47,4 @@ Discarded Experiments
 - experiment with tony's games
 - play around with RL paradigms to explore unseen board positions
 - test global averaging + more channels vs. flattening (for the input into the fc)
+- cross attention in which seq are queries, and cnn is key + value
