@@ -364,6 +364,24 @@ class MultimodalDataset(Dataset):
             torch.tensor(self.lengths[idx], dtype=torch.long),
             torch.tensor(self.labels[idx], dtype=torch.long),
         )
+    
+class MultimodalTwoDataset(Dataset):
+    def __init__(self, sequences, boards, lengths, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
 
 """ Analysis """
 def is_legal_move(chess_board, move_san):
