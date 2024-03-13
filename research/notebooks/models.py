@@ -444,6 +444,7 @@ class TransformerModel(nn.Module):
         self.d_embed = d_embed
 
     def forward(self, x, seq_lengths):
+        seq_lengths = seq_lengths.to(device)
         mask = self.create_mask(seq_lengths, x.size(1))
         x = self.embedding(x) * math.sqrt(self.d_embed)
         x = self.pos_encoder(x)
@@ -455,7 +456,7 @@ class TransformerModel(nn.Module):
     def create_mask(self, seq_lengths, max_len):
         batch_size = seq_lengths.size(0)
         # Create a mask of shape (batch_size, max_len) with all zeros
-        mask = torch.zeros(batch_size, max_len)
+        mask = torch.zeros(batch_size, max_len, device=seq_lengths.device)
 
         # Iterate over each element in seq_lengths to set `-inf` for padding
         for i in range(batch_size):
@@ -614,7 +615,7 @@ class MultiModalEight(nn.Module):
         nhead = 12
         self.transform = TransformerModel(vocab, d_embed, nhead, d_hidden, d_out, num_layers=3,dropout=0.1) 
         self.cnn = SENetThree(256)
-        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(256+128, 256), nn.ReLU(), nn.Dropout(0.2), nn.Linear(256, d_out))
+        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(256+d_embed, 256), nn.ReLU(), nn.Dropout(0.2), nn.Linear(256, d_out))
 
     def forward(self, board, sequence, seq_lengths):
         seq_encoding = self.transform(sequence, seq_lengths)
