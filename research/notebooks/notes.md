@@ -1,8 +1,9 @@
 # TODO
-- test cnn + transformers
-- test UCI vs. SAN again (on local machine)
-- make another instance with more data -> create memmaps with special tokens -> create memmaps of other months
+- test UCI vs. SAN again (on local machine, using haha_longer.csv and doing df_data twice)
+- create memmaps with special tokens (need to repeat everything breh... also add channels + include FEN to allow cross attention jawns)
+    - repeat for other months
     - train new multimodal model (on 6 months + special tokens + potentially transformers)
+    - train with batch size of 8
 - experiment with cross attention
     - [0] working on right now -> cross attention in which seq are queries, and cnn is key + value
     - full transformer cross-attention
@@ -18,7 +19,6 @@
 - create dataset of 50 positions (tactical plays: check, taking, forks | positional plays: taking the center) -- moves that are very obvious and good, (maybe not perfect), to a decent human player
 First Item on Later
 - do pretraining (on all ELOs) + finetuning (on ELO)
-
 
 ## Long-Term/Architectural Experiments
 - Transfer + Fine-tuning vs. ELO as a parameter 
