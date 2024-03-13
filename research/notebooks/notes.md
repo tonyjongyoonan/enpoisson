@@ -15,7 +15,7 @@
 - experiment with tony's games
 First Item on Later
 - do transfer + finetuning (on ELO)
-- test global averaging + more channels vs. flattening
+- test global averaging + more channels vs. flattening (for the input into the fc)
 - play around with RL paradigms to explore unseen board positions
 
 

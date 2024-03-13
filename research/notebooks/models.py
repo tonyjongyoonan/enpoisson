@@ -1,4 +1,5 @@
 import torch
+import math
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
@@ -433,6 +434,53 @@ class RNNModelTwo(nn.Module):
         output = self.fc(output)
         return output
     
+class TransformerModel(nn.Module):
+    def __init__(self, vocab, d_embed, nhead, d_hidden, d_out, num_layers, dropout=0.2):
+        super(TransformerModel, self).__init__()
+        self.embedding = nn.Embedding(len(vocab.move_to_id), d_embed)
+        self.pos_encoder = PositionalEncoding(d_embed, dropout)
+        transformer_layers = nn.TransformerEncoderLayer(d_embed, nhead, d_hidden, dropout, batch_first=True)
+        self.transformer_encoder = nn.TransformerEncoder(transformer_layers, num_layers)
+        self.d_embed = d_embed
+
+    def forward(self, x, seq_lengths):
+        mask = self.create_mask(seq_lengths, x.size(1))
+        x = self.embedding(x) * math.sqrt(self.d_embed)
+        x = self.pos_encoder(x)
+        output = self.transformer_encoder(x, src_key_padding_mask=mask)
+        output = output.mean(dim=1)
+        #last_token_output = output[:, -1, :]  # shape (batch_size, d_embed)
+        return output
+    
+    def create_mask(self, seq_lengths, max_len):
+        batch_size = seq_lengths.size(0)
+        # Create a mask of shape (batch_size, max_len) with all zeros
+        mask = torch.zeros(batch_size, max_len)
+
+        # Iterate over each element in seq_lengths to set `-inf` for padding
+        for i in range(batch_size):
+            length = seq_lengths[i]
+            mask[i, length:] = float('-inf')
+
+        return mask
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_embed, dropout=0.1, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(max_len, d_embed)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_embed, 2).float() * (-math.log(10000.0) / d_embed))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(1)].transpose(0, 1)
+        return self.dropout(x)
+    
 class MultiModal(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
@@ -556,6 +604,32 @@ class MultiModalSeven(nn.Module):
 
     def forward(self, board, sequence, seq_lengths):
         seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
+    
+class MultiModalEight(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        nhead = 12
+        self.transform = TransformerModel(vocab, d_embed, nhead, d_hidden, d_out, num_layers=3,dropout=0.1) 
+        self.cnn = SENetThree(256)
+        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(256+128, 256), nn.ReLU(), nn.Dropout(0.2), nn.Linear(256, d_out))
+
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.transform(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
+    
+class CNNtoTransformer(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.cnn = SENetThree(256)
+        self.transformer
+        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(256, 256), nn.ReLU(), nn.Dropout(0.2), nn.Linear(256, d_out))
+
+    def forward(self, board, sequence, seq_lengths):
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
