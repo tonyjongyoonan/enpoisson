@@ -6,7 +6,6 @@
     - [1] let's go here right away -> self attention transformer on cnn (including past 4 moves), do positional encoding on each move
 - find best CNN model as large as I can go (then train and transfer)
 - find best RNN/transformer model (then train and transfer)
-    - experiment: add [CLS] and [SEP] tokens
 - do transfer + finetuning on RNN (token prediction)
 - add more channels (@nate)
 - test UCI vs. SAN again
@@ -41,3 +40,7 @@ Things to do before the next presentation (15 hours)
 - Test attention mechanism (3 hour)
 - Scale everything with GPUs (1 hour)
 - Error Analysis (5 hours)
+
+## Note: 3/12
+Discarded Experiments
+- experiment: add [CLS] and [SEP] tokens

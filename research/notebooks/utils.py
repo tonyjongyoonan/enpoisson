@@ -255,7 +255,24 @@ class Vocabulary:
     def get_move(self, id):
         return self.id_to_move.get(id, self.id_to_move[0])
 
+class VocabularyTwo:
+    def __init__(self):
+        self.move_to_id = {"<UNK>": 0, "CLS": 1}
+        self.id_to_move = {0: "<UNK>", 1: "CLS"}
+        self.index = 2  # Start indexing from 3
 
+    def add_move(self, move):
+        if move not in self.move_to_id:
+            self.move_to_id[move] = self.index
+            self.id_to_move[self.index] = move
+            self.index += 1
+
+    def get_id(self, move):
+        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
+
+    def get_move(self, id):
+        return self.id_to_move.get(id, self.id_to_move[0])
+    
 class ChessDataset(Dataset):
     def __init__(self, X, Y):
         self.X = X
