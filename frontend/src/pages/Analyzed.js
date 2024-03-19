@@ -12,6 +12,7 @@ const Analyzed = () => {
   const location = useLocation();
   const pgn = location.state.pgn;
   const moveIndexToFeedback = useRef({});
+  const feedback = "";
 
   const getPgnMoves = (pgn) => {
     const newChess = new Chess();
@@ -33,7 +34,7 @@ const Analyzed = () => {
           // request for feedback
 
         }
-        const feedback = "Feedback";
+        feedback = "Feedback";
 
         // store feedback in hashmap
         moveIndexToFeedback.current[moveIndex.current] = feedback;
@@ -44,7 +45,7 @@ const Analyzed = () => {
         moveIndex.current--;
 
         // get cached feedback
-        const feedback = moveIndexToFeedback.current[moveIndex.current];
+        feedback = moveIndexToFeedback.current[moveIndex.current];
         
         // display feedback
 
@@ -63,9 +64,7 @@ const Analyzed = () => {
       <div className="analysis-text-container">
         <h2>Analysis</h2>
         <p>TonySoTender vs. chmuina</p>
-        <p>{"The game starts with the Philidor Defense, which begins after 1.e4 e5 2.Nf3 d6. This is a solid opening choice from Black, aiming for a strong pawn structure and control over the center.\
-        White opts for a restrained setup with 4.h3, preventing any piece from pinning the knight on f3. Black's 7...Bxc4 followed by 8...Nd4 indicates an attempt to simplify the position, but White recaptures with the knight, maintaining a strong pawn structure.\
-        After White's queen and rook coordinate effectively to pressure Black's position, Black resigns on move 65, facing the loss of more material and an untenable position."}</p>
+        <p>{feedback}</p>
       </div>
     </div>
   );

@@ -1,28 +1,28 @@
 .analysis-page-container {
   display: flex;
-  flex-direction: row; /* Ensures the flex items are laid out horizontally */
-  align-items: flex-start; /* Aligns items to the start of the cross axis */
-  justify-content: flex-start; /* Aligns items to the start of the main axis */  
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start; 
   width: 75%;
   margin-top: 35px;
-  gap: 30px; /* This creates space between the flex items */
+  gap: 30px;
 }
 
 .chessboard-container {
-  flex: 0 0 45%; /* Reduces the width and does not allow it to grow or shrink */
-  margin-left: 15%; /* Adds some space between the chessboard and the analysis */
+  flex: 0 0 45%
+  margin-left: 15%;
   border: 6px solid #353434;
   border-radius: 8px;
   margin-right: 3%;
 }
 
 .analysis-text-container {
-  flex-basis: 50%; /* Adjusted width */
-  padding: 20px; /* Adds padding inside the container */
-  overflow-wrap: break-word; /* Ensures that words break and wrap to the next line */
-  word-wrap: break-word; /* Legacy support for older browsers */
-  hyphens: auto; /* Automatically add hyphens when breaking words */
-  overflow-y: auto; /* Adds vertical scrollbar if content overflows */
+  flex-basis: 50%;
+  padding: 20px;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
+  overflow-y: auto;
   border: 3px solid #353434;
   border-radius: 8px;
   background-color: #353434;
