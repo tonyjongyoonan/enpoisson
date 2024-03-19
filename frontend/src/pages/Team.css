@@ -1,20 +1,24 @@
 .team-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    overflow: hidden;
 }
 
-.team-member {
-    width: 45%;
-    margin-bottom: 2rem;
-    margin-right: 3rem;
+.groupmate-card {
+    flex: 0 0 auto;
+    width: 15%;
+    margin-right: 2rem;
 }
 
-.team-member img {
+.groupmate-card img {
     width: 100%;
     height: auto;
 }
 
-.team-member .description {
+.groupmate-card .description {
     margin-top: 1rem;
+}
+
+.groupmate-img {
+    width: 100px;
+    height: 100px;
 }

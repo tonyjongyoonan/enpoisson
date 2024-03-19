@@ -1,33 +1,38 @@
 import React from 'react';
 import './Team.css';
+import joe from '../assets/joe.png';
+import ishaan from '../assets/ishaan.png';
+import andrew from '../assets/andrew.png';
+import nate from '../assets/nate.png';
+import tony from '../assets/tony.png';
 
 const Team = () => {
     const groupmates = [
         {
             name: 'Joseph Lee',
-            image: 'joe.jpg',
+            image: joe,
             description: 'Research',
         },
         {
             name: 'Ishaan Lal',
-            image: 'ishaan.jpg',
+            image: ishaan,
             description: 'Research',
         },
         {
             name: 'Andrew Jiang',
-            image: 'andrew.jpg',
+            image: andrew,
             description: 'Research',
 
         },
         {
             name: 'Nathaniel Lao',
-            image: 'nate.jpg',
+            image: nate,
             description: 'Fullstack',
 
         },
         {
             name: 'Tony An',
-            image: 'tony.jpg',
+            image: tony,
             description: 'Fullstack',
 
         }
@@ -37,7 +42,7 @@ const Team = () => {
         <div className="team-container">
             {groupmates.map((groupmate, index) => (
                 <div key={index} className="groupmate-card">
-                    <img src={groupmate.image} alt={groupmate.name} />
+                    <img src={groupmate.image} alt={groupmate.name} style={{ width: '100px', height: '100px' }} />
                     <h3>{groupmate.name}</h3>
                     <p>{groupmate.description}</p>
                 </div>
