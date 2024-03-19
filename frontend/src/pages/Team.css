@@ -1,0 +1,20 @@
+.team-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.team-member {
+    width: 45%;
+    margin-bottom: 2rem;
+    margin-right: 3rem;
+}
+
+.team-member img {
+    width: 100%;
+    height: auto;
+}
+
+.team-member .description {
+    margin-top: 1rem;
+}

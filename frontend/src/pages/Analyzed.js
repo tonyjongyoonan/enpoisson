@@ -64,7 +64,7 @@ const Analyzed = () => {
       <div className="analysis-text-container">
         <h2>Analysis</h2>
         <p>TonySoTender vs. chmuina</p>
-        <p>{feedback}</p>
+        <p>{"Here is the placeholder feedback--Andrew, when you have a chance to see this, can you please fix the formatting so that it's flexed properly for different sized feedback strings?"}</p>
       </div>
     </div>
   );

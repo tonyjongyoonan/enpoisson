@@ -9,7 +9,7 @@
 }
 
 .chessboard-container {
-  flex: 0 0 45%
+  flex: 0 0 45%;
   margin-left: 15%;
   border: 6px solid #353434;
   border-radius: 8px;
