@@ -218,55 +218,8 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
     Input: Dataframe of training data in which each row represents a full game played between players
     Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
     """
-    subsequences = []
-    next_moves = []
-    vocab = VocabularyTwo()
-    board = chess.Board()
-    for game in df['moves']:
-        moves = game.split()
-        # Turn the game into a list of moves
-        encoded_moves = [1]
-        for move in moves:
-            # Create a move object from the coordinate notation
-            move_obj = chess.Move.from_uci(move)
-            if move_obj not in board.legal_moves:
-                break 
-            else:
-                if algebraic_notation:
-                    algebraic_move = board.san(move_obj)
-                    board.push(move_obj)
-                    vocab.add_move(algebraic_move)
-                    encoded_move = vocab.get_id(algebraic_move)
-                    encoded_moves.append(encoded_move)
-                else:
-                    encoded_move = vocab.get_id(move)
-                    encoded_moves.append(encoded_move)
-        board.reset()
-        # Turn the list of moves into subsequences
-        for i in range(len(encoded_moves)-1):
-            if random.uniform(0, 1) <= sampling_rate:
-                subseq = encoded_moves[0:i+1]
-                if fixed_window and len(subseq) > fixed_window_size:
-                    subseq = subseq[-fixed_window_size:]
-                label = encoded_moves[i+1]
-                subsequences.append(subseq)
-                next_moves.append(label)
-
-    return subsequences, next_moves, vocab
-
-def df_to_data(
-    df,
-    sampling_rate=1,
-    fixed_window=True,
-    fixed_window_size=16,
-    algebraic_notation=True,
-):
-    """
-    Input: Dataframe of training data in which each row represents a full game played between players
-    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
-    """
-    board_states, subsequences, next_moves = [], [], []
-    vocab = Vocabulary()
+    board_states, fens, subsequences, next_moves = [], [], [], []
+    vocab = VocabularyWithCLS()
     chess_board = chess.Board()
     for game_board, game_moves in zip(df["board"], df["moves"]):
         moves = game_moves.split()
@@ -298,6 +251,7 @@ def df_to_data(
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 # Board
                 board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
+                fens.append(boards[i])
                 # Sequence of Moves
                 subseq = encoded_moves[0 : i + 1]
                 if fixed_window and len(subseq) > fixed_window_size:
@@ -306,7 +260,7 @@ def df_to_data(
                 # Label
                 label = encoded_moves[i + 1]
                 next_moves.append(label)
-    return subsequences, board_states, next_moves, vocab
+    return subsequences, fens, board_states, next_moves, vocab
 
 # Function to calculate top-3 accuracy
 def top_3_accuracy(y_true, y_pred):
