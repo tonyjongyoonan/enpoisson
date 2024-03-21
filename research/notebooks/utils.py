@@ -213,13 +213,15 @@ def df_to_data_simple(
                 next_moves.append(label)
     return subsequences, board_states, next_moves, vocab
 
-def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, algebraic_notation=True):
+def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, algebraic_notation=True, vocab = None):
     """
     Input: Dataframe of training data in which each row represents a full game played between players
     Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
     """
+    vocab = vocab
     board_states, fens, subsequences, next_moves = [], [], [], []
-    vocab = VocabularyWithCLS()
+    if vocab is None:
+        vocab = VocabularyWithCLS()
     chess_board = chess.Board()
     for game_board, game_moves in zip(df["board"], df["moves"]):
         moves = game_moves.split()
@@ -246,7 +248,7 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
         chess_board.reset()
         boards = boards[: len(encoded_moves)]
         # Now generate X,Y with sampling
-        for i in range(len(encoded_moves) - 1):
+        for i in range(0,len(encoded_moves)):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 # Board
@@ -258,7 +260,7 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
                     subseq = subseq[-fixed_window_size:]
                 subsequences.append(subseq)
                 # Label
-                label = encoded_moves[i + 1]
+                label = encoded_moves[i+1]
                 next_moves.append(label)
     return subsequences, fens, board_states, next_moves, vocab
 
@@ -309,7 +311,7 @@ class VocabularyWithCLS:
     def __init__(self):
         self.move_to_id = {"<UNK>": 0, "CLS": 1}
         self.id_to_move = {0: "<UNK>", 1: "CLS"}
-        self.index = 2  # Start indexing from 3
+        self.index = 2  # Start indexing from 2
 
     def add_move(self, move):
         if move not in self.move_to_id:
