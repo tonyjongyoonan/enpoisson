@@ -1,11 +1,13 @@
 # TODO
-- test UCI vs. SAN again (on local machine, using haha_longer.csv and doing df_data twice) @ 3/13
 - create memmaps with special tokens (need to repeat everything breh... also add channels + include FEN to allow cross attention jawns) @ 3/16
-    - repeat for other months
-    - train new multimodal model (on 6 months + special tokens + potentially transformers)
+    - repeat for other months [X]
+    - train new multimodal model (on 6 months + special tokens + potentially transformers) [X]
     - train with batch size of 8
-    - combine files
+    - combine files [X]
         -   https://stackoverflow.com/questions/13780907/is-it-possible-to-np-concatenate-memory-mapped-files
+- test transformers on FEN
+- think about Tree Search + viterbi schema for improving accuracy?
+- write mini paper about what you really want to test
 - experiment with cross attention @ 3/17
     - [0] start with CNN encodings and just one big MLP
     - [1] self attention transformer on cnn (including past 8 moves), do positional encoding on each move
