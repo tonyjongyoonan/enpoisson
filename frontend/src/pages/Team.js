@@ -5,36 +5,39 @@ import ishaan from '../assets/ishaan.png';
 import andrew from '../assets/andrew.png';
 import nate from '../assets/nate.png';
 import tony from '../assets/tony.png';
+import GitHubIcon from '@mui/icons-material/GitHub';
 
 const Team = () => {
     const groupmates = [
         {
-            name: 'Joseph Lee',
-            image: joe,
-            description: 'Research',
-        },
-        {
             name: 'Ishaan Lal',
             image: ishaan,
             description: 'Research',
+            github: 'https://github.com/ishlal'
         },
         {
             name: 'Andrew Jiang',
             image: andrew,
             description: 'Research',
-
+            github: 'https://github.com/aJayz54'
+        },
+        {
+            name: 'Joseph Lee',
+            image: joe,
+            description: 'Research',
+            github: 'https://github.com/jiosephlee'
         },
         {
             name: 'Nathaniel Lao',
             image: nate,
             description: 'Fullstack',
-
+            github: 'https://github.com/nlao1'
         },
         {
             name: 'Tony An',
             image: tony,
             description: 'Fullstack',
-
+            github: 'https://github.com/tonyjongyoonan'
         }
     ];
 
@@ -46,13 +49,19 @@ const Team = () => {
                         <img src={groupmate.image} alt={groupmate.name} style={{ width: '100px', height: '100px' }} />
                         <h3>{groupmate.name}</h3>
                         <p>{groupmate.description}</p>
+                        <a href={groupmate.github} target="_blank" rel="noopener noreferrer">
+                            <GitHubIcon className="github" sx={{ color: "white" }} />
+                        </a>
                     </div>
                 ))}
             </div>
             <div className="team-description">
                 <p>We are a group of students at the University of Pennsylvania</p>
-                <p>Interested in the intersection of Chess education and AI/ML!</p>
-                <p>Description yada yada yada yada</p>
+                <p>Interested in the intersection of Chess education and AI/ML.</p>
+                <p style={{ marginBottom: '1.5rem' }}></p>
+                <p>Our Chess engine recommends powerful,</p>
+                <p>human-like moves, avoiding the chaos and confusion</p>
+                <p>typically associated with Stockfish and other engines.</p>
             </div>
         </div>
     );

@@ -1,6 +1,7 @@
 .team-container {
     display: flex;
     justify-content: space-evenly;
+    margin-top: -1.6rem;
 }
 
 .groupmate-card {
@@ -17,14 +18,15 @@
     border-radius: 5px;  
 }
 
-.groupmate-card .description {
-    margin-top: 1rem;
+
+.groupmate-card .github {
+    margin-top: 0.3rem;
+    width: 20px;
+    height: 20px;
 }
 
 .team-description {
-    margin-top: 3rem;
+    margin-top: 2rem;
     text-align: center;
-    border: 6px solid #353434;
-    border-radius: 5px;
 }
 
