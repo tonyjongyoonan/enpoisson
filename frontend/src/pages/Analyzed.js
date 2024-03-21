@@ -22,7 +22,7 @@ const Analyzed = () => {
   };
 
   useEffect(() => {
-    moves.current = getPgnMoves(pgn);
+    moves.current = getPgnMoves(pgn); // format: ['e4', 'e5', ..., 'Nf3', 'Nc6']
     const handleKeydown = (event) => {
       if (event.key === 'ArrowRight' && moveIndex.current < moves.current.length) {
         chess.current.move(moves.current[moveIndex.current]);
@@ -31,8 +31,18 @@ const Analyzed = () => {
 
         // if not cached, request for feedback
         if (!moveIndexToFeedback.current[moveIndex.current]) {
-          // request for feedback
+          const model_input = [];
+          const history = chess.history({ verbose: true }).slice(0, moveIndex.current);
+          const moves_made = moves.current.slice(0, moveIndex.current); // gets all moves so far
+          for (let i = 0; i < moveIndex.length; i++) {
+            model_input.append((history[i].from, moves_made.slice(Math.max(0, i - 16), i), history[i].color));
+          }
 
+          // get feedback from model
+          // const feedback = model(model_input);
+        } else {
+          // display cached feedback
+          feedback = moveIndexToFeedback.current[moveIndex.current];
         }
         feedback = "Feedback";
 

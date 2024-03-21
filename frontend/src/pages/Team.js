@@ -39,16 +39,22 @@ const Team = () => {
     ];
 
     return (
-        <div className="team-container">
-            {groupmates.map((groupmate, index) => (
-                <div key={index} className="groupmate-card">
-                    <img src={groupmate.image} alt={groupmate.name} style={{ width: '100px', height: '100px' }} />
-                    <h3>{groupmate.name}</h3>
-                    <p>{groupmate.description}</p>
-                </div>
-            ))}
+        <div>
+            <div className="team-container">
+                {groupmates.map((groupmate, index) => (
+                    <div key={index} className="groupmate-card">
+                        <img src={groupmate.image} alt={groupmate.name} style={{ width: '100px', height: '100px' }} />
+                        <h3>{groupmate.name}</h3>
+                        <p>{groupmate.description}</p>
+                    </div>
+                ))}
+            </div>
+            <div className="team-description">
+                <p>We are a group of students at the University of Pennsylvania</p>
+                <p>Interested in the intersection of Chess education and AI/ML!</p>
+                <p>Description yada yada yada yada</p>
+            </div>
         </div>
     );
 };
-
 export default Team;
