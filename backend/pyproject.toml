@@ -5,7 +5,7 @@ description = ""
 authors = ["nlao1 <nlao@seas.upenn.edu>"]
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
+python = ">=3.9,<4.0"
 fastapi = "^0.109.0"
 uvicorn = "^0.26.0"
 httpx = "^0.26.0"
@@ -15,6 +15,11 @@ psycopg2-binary = "^2.9.9"
 passlib = "^1.7.4"
 argon2-cffi = "^23.1.0"
 pydantic = {extras = ["email"], version = "^2.5.3"}
+numpy = "^1.26.4"
+torch = "2.0.0"
+grad-cam = "^1.5.0"
+dask = {extras = ["dataframe"], version = "^2024.3.1"}
+chess = "^1.10.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^7.0.0"
