@@ -518,31 +518,33 @@ piece_to_point = {
     'k': 0
 }
 
-def check_hanging(board, move):
+def check_hanging(board, turn, move):
     board.push(move)
+    turn = not turn
     # board.push(chess.Move.from_uci(move))
-    print("BOARD")
-    print(board)
-    print("TURN: ", board.turn)
-    print("color: ", board.piece_at(0).color)
+    # print("BOARD")
+    # print(board)
+    # print("TURN: ", board.turn)
+    # print("color: ", board.piece_at(0).color)
     count_hangers = 0
     for square in range(64):
         # check if square has a piece
         piece = board.piece_at(square)
-        if piece is not None and piece.color != board.turn:
-            if is_hanging(board, square):
+        if piece is not None and piece.color != turn:
+            if is_hanging(board, turn, square):
+                print("SQUARE: ", square)
                 # print(square)
                 # print(board.piece_at(square))
                 count_hangers+=1
     board.pop()
     return count_hangers
 
-def is_hanging(board, square):
+def is_hanging(board, turn, square):
     # print(board)
     piece = board.piece_at(square)
     if piece:
-        attackers = board.attackers(board.turn, square)
-        defenders = board.attackers(not board.turn, square)
+        attackers = board.attackers(turn, square)
+        defenders = board.attackers(not turn, square)
         # print(attackers)
         # print(defenders)
 
@@ -561,7 +563,8 @@ def is_hanging(board, square):
         # print(defenders_sum)
         ans = True
         # if len(attackers) > 0 and len(defenders) > 0 and len(attackers) >= len(defenders) or attackers_sum > defenders_sum:
-        if len(attackers) > 0 and (len(attackers) >= len(defenders) or attackers_sum > defenders_sum):
+        # if len(attackers) > 0 and (len(attackers) > len(defenders) or attackers_sum > defenders_sum):
+        if len(attackers) > 0 and len(attackers) > len(defenders):
             # find the piece types of the attackers
             attacker_types = set()
             for attacker in attackers:
@@ -767,7 +770,8 @@ def get_all_delta_for_move(board, move):
     black_weighted_bonus_delta = black_delta_weighted_bonus(board, move)
     is_sac_white = white_is_sac(board, move)
     is_sac_black = black_is_sac(board, move)
-    number_hangers = check_hanging(board, move)
+    number_hangers = check_hanging(board, board.turn, move)
+    number_hangers_for_opp = check_hanging(board, not board.turn, move)
 
     print("----MOVE---- : ", move)
     print("White material delta: ", white_material_delta)
@@ -787,6 +791,7 @@ def get_all_delta_for_move(board, move):
     print("Is white sac: ", is_sac_white)
     print("Is black sac: ", is_sac_black)
     print("Number of hanging pieces for the player who made the move ", move, ": ", number_hangers)
+    print("Number of hanging pieces for opponent afer move ", move, ": ", number_hangers_for_opp)
 
     calc_white_difficulty = white_difficulty(board, move, white_material_delta, black_material_delta, white_bishop_pair_delta, black_bishop_pair_delta, white_king_pawn_distance_delta,
                 black_king_pawn_distance_delta, white_double_pawns_delta, black_double_pawns_delta, white_passed_pawns_delta, black_passed_pawns_delta,
@@ -913,7 +918,7 @@ stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=2
 # read first game in ruy_lopezes.txt
 # pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
 # pgn = open("single_game.pgn")
-pgn = open("../tonywhat.pgn")
+pgn = open("../tonywhatp2.pgn")
 # pgn = open("smol_game.pgn")
 game = chess.pgn.read_game(pgn)
 
@@ -939,7 +944,7 @@ print(board)
 # get_all_delta_for_move(board, chess.Move.from_uci(str(top_moves[0]["Move"])))
 
 # NOTE: get_all_delta_for_move DOESN'T ACTUALLY APPLY THE MOVE!
-get_all_delta_for_move(board, chess.Move.from_uci("c8g4"))
+get_all_delta_for_move(board, chess.Move.from_uci("f5g6"))
 print(board)
 # print(is_hanging(board, chess.G4))
 # add_uci_to_board(board, "b1c3")
