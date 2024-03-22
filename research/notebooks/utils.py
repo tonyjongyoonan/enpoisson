@@ -246,9 +246,10 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
                     encoded_move = vocab.get_id(move)
                     encoded_moves.append(encoded_move)
         chess_board.reset()
-        boards = boards[: len(encoded_moves)]
+        # at this point, encoded moves is [1,2,23,5,...]
+        boards = boards[: len(encoded_moves)-1]
         # Now generate X,Y with sampling
-        for i in range(0,len(encoded_moves)):
+        for i in range(0,len(encoded_moves)-1):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
                 # Board
@@ -357,6 +358,25 @@ class MultimodalDataset(Dataset):
             torch.tensor(self.lengths[idx], dtype=torch.long),
             torch.tensor(self.labels[idx], dtype=torch.long),
         )
+class MultimodalDatasetWithFEN(Dataset):
+    def __init__(self, sequences, boards, lengths, fens, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+        self.fens = fens
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            self.fens[idx],
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
     
 class MultimodalTwoDataset(Dataset):
     def __init__(self, sequences, boards, lengths, labels):
@@ -388,14 +408,18 @@ def is_legal_move(chess_board, move_san):
 
 def load_board_state_from_san(moves, vocab):
     board = chess.Board()
+    count = 0
     for index in moves:
         try:
-            if index == 0:
+            if index == 1:
+                continue
+            if index == 0 and count > 2 :
                 return board
             else:
                 move_san = vocab.get_move(index.item())
                 move = board.parse_san(move_san)
                 board.push(move)
+                count += 1
         except ValueError:
             # Handle invalid moves, e.g., break the loop or log an error
             break
