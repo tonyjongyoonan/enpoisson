@@ -1,12 +1,11 @@
 # TODO
-- create memmaps with special tokens (need to repeat everything breh... also add channels + include FEN to allow cross attention jawns) @ 3/16
-    - repeat for other months [X]
-    - train new multimodal model (on 6 months + special tokens + potentially transformers) [X]
-    - train with batch size of 8
-    - combine files [X]
-        -   https://stackoverflow.com/questions/13780907/is-it-possible-to-np-concatenate-memory-mapped-files
-- test transformers on FEN
-- think about Tree Search + viterbi schema for improving accuracy?
+- get new EC2 for high RAM
+- recreate memmaps w/ FENs & 50% sampling (for all 9 months) [0]
+- retrain model + proper evaluation w/ FENs [1]
+- retrain larger version of model w/ residuals + proper evaluation [1]
+- test transformers on FEN!!! [1]
+- implement Tree Search + viterbi schema for improving accuracy on flat probability moves [2]
+- investigate token embeddings vs. one-hot encoding for FEN transformer [1]
 - write mini paper about what you really want to test
 - experiment with cross attention @ 3/17
     - [0] start with CNN encodings and just one big MLP
