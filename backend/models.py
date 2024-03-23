@@ -16,3 +16,8 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+
+
+class ChessPosition(BaseModel):
+    fen: str
+    # is_white_move: bool
