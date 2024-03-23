@@ -518,8 +518,7 @@ piece_to_point = {
     'k': 0
 }
 
-def check_hanging(board, turn, move):
-    board.push(move)
+def check_hanging(board, turn):
     turn = not turn
     # board.push(chess.Move.from_uci(move))
     # print("BOARD")
@@ -536,7 +535,6 @@ def check_hanging(board, turn, move):
                 # print(square)
                 # print(board.piece_at(square))
                 count_hangers+=1
-    board.pop()
     return count_hangers
 
 def is_hanging(board, turn, square):
@@ -914,23 +912,23 @@ def add_uci_to_board(board, uci):
 
 
 
-stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
-# read first game in ruy_lopezes.txt
-# pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
-# pgn = open("single_game.pgn")
-pgn = open("../tonywhatp2.pgn")
-# pgn = open("smol_game.pgn")
-game = chess.pgn.read_game(pgn)
+# stockfish = Stockfish("/opt/homebrew/Cellar/stockfish/16/bin/stockfish", depth=23)
+# # read first game in ruy_lopezes.txt
+# # pgn = open("../../lichess_db_standard_rated_2017-02.pgn")
+# # pgn = open("single_game.pgn")
+# pgn = open("../tonywhatp2.pgn")
+# # pgn = open("smol_game.pgn")
+# game = chess.pgn.read_game(pgn)
 
-move_list = list(game.mainline_moves())
-# print(game.mainline_moves())
-stockfish.set_position(move_list)
-board = chess.Board()
-for i in move_list:
-    # print(type(i))
-    board.push(i)
-# get_all_heuristics(board)
-print(board)
+# move_list = list(game.mainline_moves())
+# # print(game.mainline_moves())
+# stockfish.set_position(move_list)
+# board = chess.Board()
+# for i in move_list:
+#     # print(type(i))
+#     board.push(i)
+# # get_all_heuristics(board)
+# print(board)
 # print(list(board.legal_moves))
 
 # determine who is playing next
@@ -944,8 +942,8 @@ print(board)
 # get_all_delta_for_move(board, chess.Move.from_uci(str(top_moves[0]["Move"])))
 
 # NOTE: get_all_delta_for_move DOESN'T ACTUALLY APPLY THE MOVE!
-get_all_delta_for_move(board, chess.Move.from_uci("f5g6"))
-print(board)
+# get_all_delta_for_move(board, chess.Move.from_uci("f5g6"))
+# print(board)
 # print(is_hanging(board, chess.G4))
 # add_uci_to_board(board, "b1c3")
 # print(is_hanging(board, chess.D1))
