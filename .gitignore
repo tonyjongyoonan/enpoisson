@@ -136,9 +136,10 @@ haha_longer.csv
 haha_longer_1500.csv
 haha-longer-longer-001.csv
 haha-longer-longer.csv
-research/data/
 #Python
 __pycache__
 haha-longer*
 research/data/jan-march/*.memmap
+research/data/combined/*.memmap
+research/data/apr-jun
 haha-longer*

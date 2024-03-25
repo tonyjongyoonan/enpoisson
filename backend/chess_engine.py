@@ -6,22 +6,8 @@ from nn_models import *
 from utils import fen_to_array_two, is_legal_move
 from typing import List
 
-sample_fen = "rnbqk2r/ppp1ppbp/6p1/3n4/3P1B2/4P3/PP3PPP/RN1QKBNR w KQkq - 0 6"
-sample_last_16_moves = [
-    "d4",
-    "d5",
-    "Bf4",
-    "Nf6",
-    "e3",
-    "g6",
-    "c4",
-    "g7",
-    "cxd5",
-    "Nxd5",
-]
-sample_length = len(sample_last_16_moves)
 vocab_path = "vocab.pkl"
-model_path = "multimodalmodel-best.pth"
+model_path = "multimodalmodel-exp-12.pth"
 
 
 # note: can only be used for white positions
@@ -33,7 +19,9 @@ class ChessEngine:
         self.d_hidden = 256
         self.d_embed = 64
         self.d_out = len(self.vocab.id_to_move.keys())
-        self.model = MultiModalTwo(self.vocab, self.d_embed, self.d_hidden, self.d_out)
+        self.model = MultiModalSeven(
+            self.vocab, self.d_embed, self.d_hidden, self.d_out
+        )
         self.model.load_state_dict(torch.load(model_path, map_location=device))
         self.model.eval()  # Set the model to evaluation mode
 
@@ -41,49 +29,84 @@ class ChessEngine:
     def pad_last_move_sequence(last_move_sequence_ids: List[int], sequence_length: int):
         return last_move_sequence_ids + [0 for _ in range(16 - sequence_length)]
 
-    def get_human_move(
-        self, fen: str, last_move_sequence: List[str], sequence_length: int
+    def top_k_legal_moves(self, fen: str, sorted_indices: torch.Tensor, top_k: int):
+        chess_board = chess.Board(fen)
+        output_moves = []
+        for move_idx in sorted_indices:
+            # Convert index to move (e.g., 100 |-> 'e2e4')
+            move = self.vocab.get_move(move_idx.item())
+            if len(output_moves) >= top_k:
+                break
+            if is_legal_move(chess_board, move):
+                output_moves.append(self.vocab.get_id(move))
+        return [self.vocab.id_to_move[move] for move in output_moves]
+
+    def call_model(
+        self,
+        board: list[list[list[int]]],
+        last_move_sequence_ids: list[int],
+        sequence_length: int,
     ):
         """
-        last_move_sequence: list of last 16 moves
-        sequence_length: length of the sequence. should be <= 16
+        Does the work of converting the types to tensors in order to use the model.
+        Uses a batch size of 1.
+        """
+        return self.model(
+            torch.tensor([board], dtype=torch.float32),
+            torch.tensor(
+                [
+                    ChessEngine.pad_last_move_sequence(
+                        last_move_sequence_ids, sequence_length
+                    )
+                ],
+                dtype=torch.long,
+            ),
+            torch.tensor([sequence_length], dtype=torch.long),
+        )[
+            0
+        ]  # batch of size 1
+
+    def get_human_move(self, fen: str, last_move_sequence: List[str], *, top_k: int):
+        """
+        fen: a fen in string format representing the position
+        last_move_sequence: list of last 16 half-moves made
+        top_k: keyword argument, number moves to return
         """
         fen_board: str = fen.split()[0]
         board = fen_to_array_two(fen_board)
+        sequence_length = len(last_move_sequence)
         last_move_sequence_ids = [
             self.vocab.move_to_id[move] for move in last_move_sequence
         ]
         with torch.no_grad():
-            model_output = self.model(
-                torch.tensor([board], dtype=torch.float32),
-                torch.tensor(
-                    [
-                        ChessEngine.pad_last_move_sequence(
-                            last_move_sequence_ids, sequence_length
-                        )
-                    ],
-                    dtype=torch.long,
-                ),
-                torch.tensor([sequence_length], dtype=torch.long),
-            )[0]
+            model_output = self.call_model(
+                board, last_move_sequence_ids, sequence_length
+            )
         output_probabilities = torch.softmax(
             model_output,
             dim=0,
         )
-        # sorted_probs, sorted_indices = torch.sort(model_output, descending=True)
-        # # import chess board from fen
-        # chess_board = chess.Board(fen)
-        # for move_idx in sorted_indices:
-        #     move = self.vocab.get_move(
-        #         move_idx.item()
-        #     )  # Convert index to move (e.g., 'e2e4')
-        #     if is_legal_move(chess_board, move):
-        #         predicted_move = self.vocab.get_id(move)
-        #         break
-        _, best_move = torch.max(model_output, 0)
-        return self.vocab.id_to_move[best_move.item()]
+        # add difficulty bar here
+        sorted_probs, sorted_indices = torch.sort(model_output, descending=True)
+        return self.top_k_legal_moves(fen, sorted_indices, top_k)
 
 
 if __name__ == "__main__":
+    sample_fen = "r1bqkb1r/ppp2ppp/2n1p3/8/3PpB2/4PN2/PPP2PPP/R2QKB1R w KQkq - 0 7"
+    sample_last_16_moves = [
+        "d4",
+        "d5",
+        "Bf4",
+        "Nc6",
+        "e3",
+        "Nf6",
+        "Nf3",
+        "e6",
+        "Nbd2",
+        "Ne4",
+        "Nxe4",
+        "dxe4",
+    ]
     engine = ChessEngine(model_path)
-    print(engine.get_human_move(sample_fen, sample_last_16_moves, sample_length))
+    print("model loaded")
+    print(engine.get_human_move(sample_fen, sample_last_16_moves, top_k=3))
