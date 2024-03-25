@@ -49,7 +49,7 @@ class ChessEngine:
     ):
         """
         Does the work of converting the types to tensors in order to use the model.
-        With a batch size of 1,
+        Uses a batch size of 1.
         """
         return self.model(
             torch.tensor([board], dtype=torch.float32),
@@ -66,10 +66,11 @@ class ChessEngine:
             0
         ]  # batch of size 1
 
-    def get_human_move(self, fen: str, last_move_sequence: List[str], top_k: int):
+    def get_human_move(self, fen: str, last_move_sequence: List[str], *, top_k: int):
         """
-        last_move_sequence: list of last 16 moves
-        sequence_length: length of the sequence. should be <= 16
+        fen: a fen in string format representing the position
+        last_move_sequence: list of last 16 half-moves made
+        top_k: keyword argument, number moves to return
         """
         fen_board: str = fen.split()[0]
         board = fen_to_array_two(fen_board)
@@ -106,7 +107,6 @@ if __name__ == "__main__":
         "Nxe4",
         "dxe4",
     ]
-    sample_length = len(sample_last_16_moves)
     engine = ChessEngine(model_path)
     print("model loaded")
-    print(engine.get_human_move(sample_fen, sample_last_16_moves, sample_length, 3))
+    print(engine.get_human_move(sample_fen, sample_last_16_moves, top_k=3))

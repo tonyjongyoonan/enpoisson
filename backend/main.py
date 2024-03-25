@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.hash import argon2  # for password hashing
-from models import UserCreate, UserLogin
+from models import UserCreate, UserLogin, ChessPosition
+from chess_engine import ChessEngine
 import database
-
 
 app = FastAPI()
 app.add_middleware(
@@ -13,7 +13,9 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
-users = {}
+
+chess_engine_model_path = "multimodalmodel-exp-12.pth"
+chess_engine = ChessEngine(chess_engine_model_path)
 
 
 @app.post("/login")
@@ -51,6 +53,16 @@ async def create_account(user: UserCreate):
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
+
+@app.post("/human-move")
+def get_human_move(position: ChessPosition):
+    return chess_engine.get_human_move(position.fen, position.last_16_moves, top_k=1)
+
+
+@app.post("/get-difficulty")
+def get_difficulty(position: ChessPosition):
+    pass
 
 
 if __name__ == "__main__":
