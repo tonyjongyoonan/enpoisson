@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
-import Chessboard from 'chessboardjsx';
+import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import AnalysisMoves from './AnalysisMoves';
 import Bar from '../components/Bar';
@@ -15,6 +15,7 @@ const Analyzed = () => {
   const location = useLocation();
   const pgn = location.state.pgn;
   const moveIndexToFeedback = useRef({});
+  let arrows = [];
   let feedback = "";
 
   const getPgnMoves = (pgn) => {
@@ -92,13 +93,13 @@ const Analyzed = () => {
         <Bar color={"black"} value={50} label={"+0.0"}/>
         <Bar color={"blue"} value={80} label={"hard"}/>
         <div className="chessboard-container">
-          <Chessboard position={fen} />
+          <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={[arrows]}/>
         </div>
         <div className="analysis-right-container">
           <AnalysisMoves moves={moves} index={index}/>
           <div className="analysis-button-container">
-            <button onClick={undoMove}>left</button>
-            <button onClick={makeMove}>right</button>
+            <div className="analysis-back" onClick={undoMove}></div>
+            <div className="analysis-move" onClick={makeMove}></div>
           </div>
         </div>
       </div>

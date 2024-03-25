@@ -10,6 +10,8 @@
   border: 6px solid #353434;
   border-radius: 8px;
   height: 100%;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .analysis-text-container {
@@ -35,4 +37,24 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.analysis-button-container {
+  display: flex;
+}
+
+.analysis-back {
+  width: 50%;
+  padding: 20px;
+  border: 3px solid #353434;
+  border-radius: 8px;
+  background-color: #353434;
+}
+
+.analysis-move {
+  width: 50%;
+  padding: 20px;
+  border: 3px solid #353434;
+  border-radius: 8px;
+  background-color: #353434;
 }
