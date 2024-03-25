@@ -159,7 +159,7 @@ def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
     return board_states, next_moves, vocab
 
 
-def df_to_data(
+def df_to_data_simple(
     df,
     sampling_rate=1,
     fixed_window=True,
@@ -213,6 +213,58 @@ def df_to_data(
                 next_moves.append(label)
     return subsequences, board_states, next_moves, vocab
 
+def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, algebraic_notation=True, vocab = None):
+    """
+    Input: Dataframe of training data in which each row represents a full game played between players
+    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
+    """
+    vocab = vocab
+    board_states, fens, subsequences, next_moves = [], [], [], []
+    if vocab is None:
+        vocab = VocabularyWithCLS()
+    chess_board = chess.Board()
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        boards = game_board.split("*")
+        # Encode the moves into SAN notation and then into corresponding indices
+        encoded_moves = [1]
+        for move in moves:
+            # Create a move object from the coordinate notation
+            move_obj = chess.Move.from_uci(move)
+            # There are some broken moves in the data -> stop reading if so
+            if algebraic_notation and move_obj not in chess_board.legal_moves:
+                break
+            else:
+                if algebraic_notation:
+                    algebraic_move = chess_board.san(move_obj)
+                    chess_board.push(move_obj)
+                    vocab.add_move(algebraic_move)
+                    encoded_move = vocab.get_id(algebraic_move)
+                    encoded_moves.append(encoded_move)
+                else:
+                    vocab.add_move(move)
+                    encoded_move = vocab.get_id(move)
+                    encoded_moves.append(encoded_move)
+        chess_board.reset()
+        # at this point, encoded moves is [1,2,23,5,...]
+        boards = boards[: len(encoded_moves)-1]
+        # Now generate X,Y with sampling
+        for i in range(0,len(encoded_moves)-1):
+            # TODO: Figure out how to deal with black orientation 'seeing' a different board
+            if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
+                # Board
+                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
+                fens.append(boards[i])
+                # Sequence of Moves
+                subseq = encoded_moves[0 : i + 1]
+                if fixed_window and len(subseq) > fixed_window_size:
+                    subseq = subseq[-fixed_window_size:]
+                subsequences.append(subseq)
+                # Label
+                label = encoded_moves[i+1]
+                next_moves.append(label)
+    return subsequences, fens, board_states, next_moves, vocab
+
 # Function to calculate top-3 accuracy
 def top_3_accuracy(y_true, y_pred):
     top3 = torch.topk(y_pred, 3, dim=1).indices
@@ -256,11 +308,11 @@ class Vocabulary:
     def get_move(self, id):
         return self.id_to_move.get(id, self.id_to_move[0])
 
-class VocabularyTwo:
+class VocabularyWithCLS:
     def __init__(self):
         self.move_to_id = {"<UNK>": 0, "CLS": 1}
         self.id_to_move = {0: "<UNK>", 1: "CLS"}
-        self.index = 2  # Start indexing from 3
+        self.index = 2  # Start indexing from 2
 
     def add_move(self, move):
         if move not in self.move_to_id:
@@ -306,6 +358,25 @@ class MultimodalDataset(Dataset):
             torch.tensor(self.lengths[idx], dtype=torch.long),
             torch.tensor(self.labels[idx], dtype=torch.long),
         )
+class MultimodalDatasetWithFEN(Dataset):
+    def __init__(self, sequences, boards, lengths, fens, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+        self.fens = fens
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            self.fens[idx],
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
     
 class MultimodalTwoDataset(Dataset):
     def __init__(self, sequences, boards, lengths, labels):
@@ -337,14 +408,18 @@ def is_legal_move(chess_board, move_san):
 
 def load_board_state_from_san(moves, vocab):
     board = chess.Board()
+    count = 0
     for index in moves:
         try:
-            if index == 0:
+            if index == 1:
+                continue
+            if index == 0 and count > 2 :
                 return board
             else:
                 move_san = vocab.get_move(index.item())
                 move = board.parse_san(move_san)
                 board.push(move)
+                count += 1
         except ValueError:
             # Handle invalid moves, e.g., break the loop or log an error
             break
