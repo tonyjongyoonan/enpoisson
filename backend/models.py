@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, StringConstraints
 from typing_extensions import Annotated
+from annotated_types import MaxLen
 
 
 class UserCreate(BaseModel):
@@ -20,4 +21,5 @@ class UserLogin(BaseModel):
 
 class ChessPosition(BaseModel):
     fen: str
-    # is_white_move: bool
+    last_16_moves: Annotated[list[str], MaxLen(16)]
+    is_white_move: bool
