@@ -1,5 +1,6 @@
 import json
 import chess
+from openai import OpenAI
 from heuristics import (count_passed_pawn,
                         total_control,
                         weighted_bonus, count_black_double_pawns,
@@ -226,5 +227,17 @@ def generate_prompt(start_board, move, end_board, turn):
     prompt += ". Number of White pieces hanging at end state: " + str(end_white_hanging) 
     prompt += ". Number of Black pieces hanging at start state: " + str(start_black_hanging) 
     prompt += ". Number of Black pieces hanging at end state: " + str(end_black_hanging) 
+    prompt += "\n\n"
+    prompt += "Don't yap. Give me 3-5 sentences of analysis. You can use your own understanding of chess to supplement your analysis."
 
     return prompt
+
+
+def get_analysis(start_board, move, end_board, turn):
+    prompt = generate_prompt(start_board, move, end_board, turn)
+    client = OpenAI()
+    stream = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return stream.choices[0].message.content
