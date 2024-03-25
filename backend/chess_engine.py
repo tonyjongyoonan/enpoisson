@@ -29,7 +29,7 @@ class ChessEngine:
     def pad_last_move_sequence(last_move_sequence_ids: List[int], sequence_length: int):
         return last_move_sequence_ids + [0 for _ in range(16 - sequence_length)]
 
-    def top_k_legal_moves(self, fen: str, sorted_indices: torch.Tensor, top_k: int):
+    def top_k_legal_moves(self, fen: str, sorted_indices: torch.Tensor, *, top_k: int):
         chess_board = chess.Board(fen)
         output_moves = []
         for move_idx in sorted_indices:
@@ -88,7 +88,10 @@ class ChessEngine:
         )
         # add difficulty bar here
         sorted_probs, sorted_indices = torch.sort(model_output, descending=True)
-        return self.top_k_legal_moves(fen, sorted_indices, top_k)
+        # FIXME: should probably make a map or something to preserve the probability after legality filtering
+        sorted_probs_decimals = torch.softmax(sorted_probs, dim=0)
+        top_k_moves = self.top_k_legal_moves(fen, sorted_indices, top_k=top_k)
+        return top_k_moves
 
 
 if __name__ == "__main__":
