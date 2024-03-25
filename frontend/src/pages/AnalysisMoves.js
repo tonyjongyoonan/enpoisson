@@ -2,7 +2,7 @@ import React, { useState, useEffect, Fragment } from 'react';
 import './AnalysisMoves.css';
 
 export default function AnalysisMoves(props) {
-    const {moves, current} = props;
+    const {moves, index} = props;
     const [moveList, setMoveList] = useState([]);
     useEffect(() => {
         let num_rows = Math.floor((moves.length + 1)/ 2);
@@ -20,8 +20,8 @@ export default function AnalysisMoves(props) {
     }, [moves])
 
     useEffect(() => {
-        console.log(current)
-    }, [current])
+        console.log(index)
+    }, [index])
 
 
     return(
@@ -33,11 +33,11 @@ export default function AnalysisMoves(props) {
                         <p>{move["no"]}</p>
                     </div>
                     <div className="move_first">
-                        <p> {move["first"]}</p>
+                        <p style={{ color : move["no"] * 2 - 1 === index ? "yellow" : "white"}}>{move["first"]}</p>
                     </div>
                     {move["second"] ? 
                     <div className="move_second">
-                        {move["second"]}
+                        <p style={{ color : move["no"] * 2 === index ? "yellow" : "white"}}>{move["second"]}</p>
                     </div>
                     : <Fragment />}
                     </>
