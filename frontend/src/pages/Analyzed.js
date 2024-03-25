@@ -24,7 +24,7 @@ const Analyzed = () => {
   const pgn = location.state.pgn;
   const moveIndexToFeedback = useRef({});
   const [selected, setSelected] = useState({ value: 'game', label: 'Played move'});
-  let arrows = [];
+  const [arrows, setArrows] = useState([]);
   const [feedback, setFeedback] = useState("");
 
   const getPgnMoves = (pgn) => {
@@ -37,6 +37,15 @@ const Analyzed = () => {
   const handleChange = (option) => {
     setSelected(option);
   }
+
+  useEffect(() => {
+    if (selected.value === "game" && moves.length > 0) {
+      console.log("yes");
+      const move_info = chess.current.move(moves[index]);
+      setArrows([[move_info["from"], move_info["to"]]])
+      chess.current.undo();
+    }
+  }, [selected, index, moves])
 
   const generateExplanation = () => {
     setFeedback("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
@@ -121,7 +130,7 @@ const Analyzed = () => {
         <Bar color={"black"} value={50} label={"+0.0"}/>
         <Bar color={"blue"} value={80} label={"hard"}/>
         <div className="chessboard-container">
-          <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={[arrows]}/>
+          <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
         </div>
         <div className="analysis-right-container">
           <AnalysisMoves moves={moves} index={index} updateMove={updateMove}/>
