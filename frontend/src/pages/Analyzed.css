@@ -45,6 +45,7 @@
 
 .analysis-back {
   width: 50%;
+  height: 112px;
   padding: 20px;
   border: 3px solid #353434;
   border-radius: 8px;
@@ -53,8 +54,41 @@
 
 .analysis-move {
   width: 50%;
+  height: 112px;
   padding: 20px;
   border: 3px solid #353434;
   border-radius: 8px;
   background-color: #353434;
+}
+
+.analysis-explanation-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 250px;
+}
+
+.explanation-selector-container {
+  padding: 20px;
+  border: 3px solid #353434;
+  border-radius: 8px;
+  background-color: #353434;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.analysis-select {
+  color: black;
+  width: 200px;
+}
+
+.explanation-container {
+  padding: 20px;
+  border: 3px solid #353434;
+  border-radius: 8px;
+  background-color: #353434;
+  max-height: 411.5px;
+  overflow-y: scroll;
 }
