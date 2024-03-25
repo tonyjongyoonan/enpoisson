@@ -1,19 +1,15 @@
 .analysis-page-container {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  justify-content: flex-start; 
-  width: 75%;
-  margin-top: 35px;
-  gap: 30px;
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
 }
 
 .chessboard-container {
-  flex: 0 0 45%;
-  margin-left: 15%;
   border: 6px solid #353434;
   border-radius: 8px;
-  margin-right: 3%;
+  height: 100%;
 }
 
 .analysis-text-container {
@@ -28,3 +24,9 @@
   background-color: #353434;
 }
 
+.analysis-right-container {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
