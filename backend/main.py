@@ -55,9 +55,9 @@ def root():
     return {"message": "Hello World"}
 
 
-@app.post("/human-move")
+@app.post("/get-human-move")
 def get_human_move(position: ChessPosition):
-    return chess_engine.get_human_move(position.fen, position.last_16_moves, top_k=1)
+    return chess_engine.get_human_move(position.fen, position.last_16_moves, top_k=3)
 
 
 @app.post("/get-difficulty")
