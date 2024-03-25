@@ -6,4 +6,6 @@
     border: 3px solid #353434;
     border-radius: 8px;
     background-color: #353434;
+    max-height: 450px;
+    overflow-y: scroll;
 }
