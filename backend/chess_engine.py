@@ -41,13 +41,22 @@ class ChessEngine:
                 output_moves.append(self.vocab.get_id(move))
         return [self.vocab.id_to_move[move] for move in output_moves]
 
-    def call_model(self, board, last_move_sequence, sequence_length):
+    def call_model(
+        self,
+        board: list[list[list[int]]],
+        last_move_sequence_ids: list[int],
+        sequence_length: int,
+    ):
+        """
+        Does the work of converting the types to tensors in order to use the model.
+        With a batch size of 1,
+        """
         return self.model(
             torch.tensor([board], dtype=torch.float32),
             torch.tensor(
                 [
                     ChessEngine.pad_last_move_sequence(
-                        last_move_sequence, sequence_length
+                        last_move_sequence_ids, sequence_length
                     )
                 ],
                 dtype=torch.long,
@@ -57,15 +66,14 @@ class ChessEngine:
             0
         ]  # batch of size 1
 
-    def get_human_move(
-        self, fen: str, last_move_sequence: List[str], sequence_length: int, top_k: int
-    ):
+    def get_human_move(self, fen: str, last_move_sequence: List[str], top_k: int):
         """
         last_move_sequence: list of last 16 moves
         sequence_length: length of the sequence. should be <= 16
         """
         fen_board: str = fen.split()[0]
         board = fen_to_array_two(fen_board)
+        sequence_length = len(last_move_sequence)
         last_move_sequence_ids = [
             self.vocab.move_to_id[move] for move in last_move_sequence
         ]
