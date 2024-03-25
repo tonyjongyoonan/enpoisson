@@ -40,13 +40,15 @@ const Analyzed = () => {
         if (!moveIndexToFeedback.current[moveIndex.current]) {
           const model_input = [];
           const history = chess.history({ verbose: true }).slice(0, moveIndex.current);
-          const moves_made = moves.slice(0, moveIndex.current); // gets all moves so far
+          const moves_made = moves.current.slice(0, moveIndex.current); // gets all moves so far
+          var model_inputs_json = {"moves": []};
           for (let i = 0; i < moveIndex.length; i++) {
-            model_input.append((history[i].from, moves_made.slice(Math.max(0, i - 16), i), history[i].color));
+            var input_json = {"from": history[i].from, "moves_made": moves_made.slice(Math.max(0, i - 16), i), "color": history[i].color};
+            model_inputs_json.moves.append(input_json);
           }
 
           // get feedback from model
-          // const feedback = model(model_input);
+          // const feedback = model(model_inputs_json);
         } else {
           // display cached feedback
           feedback = moveIndexToFeedback.current[moveIndex.current];

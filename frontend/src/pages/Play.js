@@ -1,33 +1,25 @@
-import "./Play.css";
-import React from "react";
-import { reducer } from "../reducer/reducer";
-import { useReducer } from "react";
-import { initGameState } from "../constants";
-import AppContext from "../contexts/Context";
-import Board from "../components/Board/Board";
-import Control from "../components/Control/Control";
-import Footer from "../components/Footer";
-import TakeBack from "../components/Control/bits/TakeBack";
-import MovesList from "../components/Control/bits/MovesList";
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import Chessboard from 'chessboardjsx';
+import { Chess } from 'chess.js';
+import './Play.css';
 
-function Play() {
-  const [appState, dispatch] = useReducer(reducer, initGameState);
-  const providerState = {
-    appState,
-    dispatch,
-  };
+const Play = () => {
+  const [fen, setFen] = useState('start');
+  const chess = useRef(new Chess());
+  const moveIndex = useRef(0);
+  const moves = useRef([]);
+  const location = useLocation();
+  const moveIndexToFeedback = useRef({});
+  const feedback = "";
+
+
   return (
-    <AppContext.Provider value={providerState}>
-      <div className="Game">
-        <Board />
-        <Control>
-          <MovesList />
-          <TakeBack />
-        </Control>
-        <Footer />
+    <div className="play-page-container">
+      <div className="chessboard-container">
+        <Chessboard position={fen} />
       </div>
-    </AppContext.Provider>
+    </div>
   );
-}
-
+};  
 export default Play;

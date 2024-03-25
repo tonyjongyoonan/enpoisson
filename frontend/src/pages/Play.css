@@ -1,14 +1,17 @@
-@import '../constants.css';
-@import url('https://fonts.googleapis.com/css2?family=Sofia+Sans&display=swap');
+.play-page-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start; 
+  width: 75%;
+  margin-top: 35px;
+  gap: 30px;
+}
 
-.Game {
-  display: grid;
-  place-content: center;
-  place-items: center;
-  width: 100vh;
-  height: 100vh;
-  background: var(--bg-color);
-  font-family: 'Sofia Sans', sans-serif;
-  grid-template-columns: auto 15vw;
-
+.chessboard-container {
+  flex: 0 0 45%;
+  margin-left: 15%;
+  border: 6px solid #353434;
+  border-radius: 8px;
+  margin-right: 3%;
 }

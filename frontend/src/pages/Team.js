@@ -1,11 +1,11 @@
 import React from 'react';
-import './Team.css';
 import joe from '../assets/joe.png';
 import ishaan from '../assets/ishaan.png';
 import andrew from '../assets/andrew.png';
 import nate from '../assets/nate.png';
 import tony from '../assets/tony.png';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import './Team.css';
 
 const Team = () => {
     const groupmates = [
