@@ -21,7 +21,7 @@ sample_last_16_moves = [
 ]
 sample_length = len(sample_last_16_moves)
 vocab_path = "vocab.pkl"
-model_path = "multimodalmodel-best.pth"
+model_path = "multimodalmodel-exp-12.pth"
 
 
 # note: can only be used for white positions
@@ -33,7 +33,9 @@ class ChessEngine:
         self.d_hidden = 256
         self.d_embed = 64
         self.d_out = len(self.vocab.id_to_move.keys())
-        self.model = MultiModalTwo(self.vocab, self.d_embed, self.d_hidden, self.d_out)
+        self.model = MultiModalSeven(
+            self.vocab, self.d_embed, self.d_hidden, self.d_out
+        )
         self.model.load_state_dict(torch.load(model_path, map_location=device))
         self.model.eval()  # Set the model to evaluation mode
 
