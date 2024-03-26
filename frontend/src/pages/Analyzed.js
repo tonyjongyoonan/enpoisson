@@ -9,8 +9,6 @@ import './Analyzed.css';
 
 const options = [
   { value: 'game', label: 'Played move'}, 
-  { value: '500', label: '500 ELO most human move'},
-  { value: '1000', label: '1000 ELO most human move'}, 
   { value: '1500', label: '1500 ELO most human move'}
 ]
 
@@ -22,10 +20,10 @@ const Analyzed = () => {
   const [moves, setMoves] = useState([]);
   const location = useLocation();
   const pgn = location.state.pgn;
-  const moveIndexToFeedback = useRef({});
   const [selected, setSelected] = useState({ value: 'game', label: 'Played move'});
   const [arrows, setArrows] = useState([]);
   const [feedback, setFeedback] = useState("");
+  const [recMove, setRecMove] = useState("");
 
   const getPgnMoves = (pgn) => {
     const newChess = new Chess();
@@ -35,6 +33,11 @@ const Analyzed = () => {
   };
 
   const handleChange = (option) => {
+    if (option.value !== 'game') {
+      setTimeout(() => {
+        getEngineMove();
+      }, 500)
+    }
     setSelected(option);
     setArrows([]);
     setFeedback("");
@@ -43,16 +46,20 @@ const Analyzed = () => {
   useEffect(() => {
     if (index >= moves.length) {
       setArrows([]);
-    }
-    else if (selected.value === "game" && moves.length > 0) {
+    } else if (selected.value === "game" && moves.length > 0) {
       const move_info = chess.current.move(moves[index]);
       setArrows([[move_info["from"], move_info["to"]]])
       chess.current.undo();
+    } else if (recMove !== "") {
+      const move_info = chess.current.move(recMove);
+      setArrows([[move_info["from"], move_info["to"]]])
+      chess.current.undo();
     }
-  }, [selected, index, moves])
+  }, [selected, index, moves, recMove])
 
   const generateExplanation = () => {
-    setFeedback("The castle move by Black (O-O-O), though it appears to result in some slight short term losses, might set up a more advantageous strategic situation in the long run. The material count remains unchanged at 5559, indicating no pieces were lost or exchanged in this move. The move increases Black's control over the board from 37 to 46 squares, implying that Black has expanded their influence on the game. While the castle move moved the king further away from the nearest black pawn, thus potentially leading to a slightly more exposed position, the shift in control indicates a broader control of the board. However, the move leaves one of Black's pieces hanging, potentially creating a risk for the next moves. This move might signal a transition from a defensive to more offensive play for Black.")
+    setFeedback("an error occurred");
+    // setFeedback("The castle move by Black (O-O-O), though it appears to result in some slight short term losses, might set up a more advantageous strategic situation in the long run. The material count remains unchanged at 5559, indicating no pieces were lost or exchanged in this move. The move increases Black's control over the board from 37 to 46 squares, implying that Black has expanded their influence on the game. While the castle move moved the king further away from the nearest black pawn, thus potentially leading to a slightly more exposed position, the shift in control indicates a broader control of the board. However, the move leaves one of Black's pieces hanging, potentially creating a risk for the next moves. This move might signal a transition from a defensive to more offensive play for Black.")
   }
 
   const updateMove = (x) => {
@@ -72,25 +79,73 @@ const Analyzed = () => {
     chess.current.move(moves[index]);
     setFen(chess.current.fen());
     setIndex(index + 1);
+  }
 
-    // // if not cached, request for feedback
-    // if (!moveIndexToFeedback.current[index]) {
-    //   const model_input = [];
-    //   const history = chess.history({ verbose: true }).slice(0, index);
-    //   const moves_made = moves.slice(0, index); // gets all moves so far
-    //   for (let i = 0; i < index; i++) {
-    //     model_input.append((history[i].from, moves_made.slice(Math.max(0, i - 16), i), history[i].color));
-    //   }
+  const getExplanation = async() => {
+    try {
+      const response = await fetch("http://localhost:8000/get-explanation", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fen: chess.current.fen(),
+          move: recMove,
+          is_white_move: moves.length % 2 === 1,
+        })
+      });
+      const data = await response.json();
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+      setFeedback("An error occurred.");
+    }
+  }
 
-    //   // get feedback from model
-    //   // const feedback = model(model_input);
-    // } else {
-    //   // display cached feedback
-    //   setFeedback(moveIndexToFeedback.current[index.current]);
-    // }
+  const getEngineMove = async () => {
+    const no_moves = chess.current.history().length;
+    try {
+      const response = await fetch("http://localhost:8000/get-human-move", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fen: chess.current.fen(), 
+          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
+          is_white_move: moves.length % 2 !== 1 // if odd number of moves, then return false (black) since we want model to give black move
+        })
+      });
+      const data = await response.json();
+      const returned_moves = Object.keys(data);
+      const probabilities = Object.values(data);
+      const sumProb = probabilities.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < probabilities.length; i++) {
+        probabilities[i] /= sumProb;
+      }
+      console.log(returned_moves);
+      console.log(probabilities);
+      const threshold = Math.random();
+      console.log("threshold: " + threshold);
+      let runningProb = probabilities[0];
+      let selectedMove = null;
+      for (let i = 0; i < returned_moves.length; i++) {
+        console.log("runningProb: " + runningProb);
+        if (runningProb > threshold) {
+          selectedMove = returned_moves[i];
+          break;
+        }
+        runningProb += probabilities[i + 1];
+      }
 
-    // store feedback in hashmap
-    moveIndexToFeedback.current[index] = feedback;
+      if (selectedMove) {
+        setRecMove(selectedMove);
+      } else {
+        console.log('error: no move selected');
+      }
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   const undoMove = () => {
@@ -100,11 +155,6 @@ const Analyzed = () => {
     chess.current.undo();
     setFen(chess.current.fen());
     setIndex(index - 1);
-
-    // get cached feedback
-    // setFeedback(moveIndexToFeedback.current[index]);
-    
-    // display feedback
   }
 
   useEffect(() => {
@@ -121,7 +171,8 @@ const Analyzed = () => {
   }, [moves, index])
 
   useEffect(() => {
-    setMoves(getPgnMoves(pgn)); // format: ['e4', 'e5', ..., 'Nf3', 'Nc6']
+    const temp = getPgnMoves(pgn);
+    setMoves(temp); // format: ['e4', 'e5', ..., 'Nf3', 'Nc6']
   }, [pgn]);
 
   return (
@@ -146,7 +197,7 @@ const Analyzed = () => {
           <div className="explanation-selector-container">
             <Select className="analysis-select" value={selected} onChange={handleChange} options={options} />
             { selected.value !== "game" ? 
-              <p>{ chess.current.isCheckmate() ? "Checkmate!" : "Most likely move: filler" } </p> :
+              <p>{ chess.current.isCheckmate() ? "Checkmate!" : "Most likely move: " + recMove } </p> :
               <p>{ index < moves.length ? "Next played move: " + moves[index] : "Game is over!" }</p>
             }
             <button onClick={(e) => generateExplanation()}>Explain</button>
