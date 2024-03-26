@@ -24,8 +24,34 @@ const Play = () => {
     }
   };
   
-  const getEngineMove =  {
-
+  const getEngineMove = async () => {
+    // const model_input_json = { "moves": [] };
+    const no_moves = chess.current.history().length;
+    // const history = chess.current.history({ verbose: true }).slice(0, no_moves);
+    // const moves_made = moves.slice(0, no_moves); // gets all moves so far
+    // for (let i = 0; i < no_moves; i++) {
+    //   model_input_json.moves.push({ "fen": chess.current.fen(), "last_16_moves": moves_made.slice(Math.max(0, i - 16), i), "is_white": history[i].color === 'w' });
+    // }
+    const fen = chess.current.fen();
+    const last_16_moves = chess.current.history().slice(Math.max(0, no_moves - 16), no_moves);
+    console.log({ fen, last_16_moves });
+    try {
+      const response = await fetch("http://localhost:8000/get-human-move", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fen: chess.current.fen(), 
+          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves)
+        })
+      });
+      const data = await response.json();
+      console.log(data);
+      // Process the engine move data
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   // Function to handle piece drop
@@ -39,12 +65,12 @@ const Play = () => {
         to: targetSquare,
         promotion: 'q'
       });
-      console.log(move);
       if (move === null) return;
       if (chess.current.isGameOver() || chess.current.isDraw()) return false;
       setFen(chess.current.fen());
 
       // find engine move
+      getEngineMove();
 
     } catch (error) {
       console.log(error);

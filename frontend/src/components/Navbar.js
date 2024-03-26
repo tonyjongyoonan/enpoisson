@@ -6,19 +6,6 @@ import "./Navbar.css";
 function Navbar() {
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/current_user');
-        setCurrentUser(response.data.username);
-      } catch (error) {
-        console.error('Failed to fetch current user:', error);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
-
   return (
     <div className="Navbar">
       <div className="leftSide">
