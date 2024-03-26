@@ -67,6 +67,8 @@ def get_human_move(position: ChessPosition):
 
 @app.post("/get-difficulty")
 def get_difficulty(position: ChessPosition):
+    # at a high level: of the top 5 human moves, how many of them are blunders/good moves?
+    # take the probability of bad moves and sum them.
     pass
 
 
