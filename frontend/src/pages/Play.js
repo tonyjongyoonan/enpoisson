@@ -22,6 +22,11 @@ const Play = () => {
     const move = moves[Math.floor(Math.random() * moves.length)];
     chess.current.move(move);
     setFen(chess.current.fen());
+    if (chess.current.isCheckmate()) {
+      console.log('checkmate');
+    } else if (chess.current.isDraw()) {
+      console.log('draw');
+    }
   };
 
   const handleColorChange = (newColor) => {
@@ -37,7 +42,7 @@ const Play = () => {
   const getEngineMove = async () => {
     // const model_input_json = { "moves": [] };
     const no_moves = chess.current.history().length;
-    // const history = chess.current.history({ verbose: true }).slice(0, no_moves);
+    // const history = chess.current.history().slice(0, no_moves);
     // const moves_made = moves.slice(0, no_moves); // gets all moves so far
     // for (let i = 0; i < no_moves; i++) {
     //   model_input_json.moves.push({ "fen": chess.current.fen(), "last_16_moves": moves_made.slice(Math.max(0, i - 16), i), "is_white": history[i].color === 'w' });
@@ -68,7 +73,6 @@ const Play = () => {
   // Function to handle piece drop
   const onDrop = (sourceSquare, targetSquare, piece) => {
     try {
-      
       console.log(chess.current.turn());
       // if (turn !== chess.current.turn()) return;
       let move = chess.current.move({
@@ -79,13 +83,22 @@ const Play = () => {
       if (move === null) return;
       if (chess.current.isGameOver() || chess.current.isDraw()) return false;
       setFen(chess.current.fen());
+      if (chess.current.isCheckmate()) {
+        console.log('checkmate');
+      } else if (chess.current.isDraw()) {
+        console.log('draw');
+      }
 
       // find engine move
       // getEngineMove();
       setTimeout(() => {
         playRandomMove();
       }, 500);
-
+      if (chess.current.isCheckmate()) {
+        console.log('checkmate');
+      } else if (chess.current.isDraw()) {
+        console.log('draw');
+      }
     } catch (error) {
       console.log(error);
       return null;
