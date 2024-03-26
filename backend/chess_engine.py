@@ -5,6 +5,7 @@ import chess
 from nn_models import *
 from utils import fen_to_array_two, is_legal_move
 from typing import List
+import os
 
 vocab_path = "vocab.pkl"
 model_path = "multimodalmodel-exp-12.pth"
@@ -13,7 +14,7 @@ model_path = "multimodalmodel-exp-12.pth"
 # note: can only be used for white positions
 class ChessEngine:
     def __init__(self, model_path):
-        device = torch.device("cpu")
+        self.device = torch.device("cpu")
         with open(vocab_path, "rb") as inp:
             self.vocab = pickle.load(inp)
         self.d_hidden = 256
@@ -21,8 +22,8 @@ class ChessEngine:
         self.d_out = len(self.vocab.id_to_move.keys())
         self.model = MultiModalSeven(
             self.vocab, self.d_embed, self.d_hidden, self.d_out
-        )
-        self.model.load_state_dict(torch.load(model_path, map_location=device))
+        ).to(self.device)
+        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()  # Set the model to evaluation mode
 
     @staticmethod
@@ -51,17 +52,23 @@ class ChessEngine:
         Does the work of converting the types to tensors in order to use the model.
         Uses a batch size of 1.
         """
+        board_tensor = torch.tensor([board], dtype=torch.float32, device=self.device)
+        move_sequence_tensor = torch.tensor(
+            [
+                ChessEngine.pad_last_move_sequence(
+                    last_move_sequence_ids, sequence_length
+                )
+            ],
+            dtype=torch.long,
+            device=self.device,
+        )
+        sequence_length_tensor = torch.tensor(
+            [sequence_length], dtype=torch.long, device=self.device
+        )
         return self.model(
-            torch.tensor([board], dtype=torch.float32),
-            torch.tensor(
-                [
-                    ChessEngine.pad_last_move_sequence(
-                        last_move_sequence_ids, sequence_length
-                    )
-                ],
-                dtype=torch.long,
-            ),
-            torch.tensor([sequence_length], dtype=torch.long),
+            board_tensor,
+            move_sequence_tensor,
+            sequence_length_tensor,
         )[
             0
         ]  # batch of size 1
