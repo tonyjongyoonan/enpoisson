@@ -1,8 +1,10 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from passlib.hash import argon2  # for password hashing
-from models import UserCreate, UserLogin, ChessPosition
+from models import *
 from chess_engine import ChessEngine
+from generate_prompts import get_analysis
+import chess
 import database
 
 app = FastAPI()
@@ -57,12 +59,22 @@ def root():
 
 @app.post("/get-human-move")
 def get_human_move(position: ChessPosition):
-    return chess_engine.get_human_move(position.fen, position.last_16_moves, top_k=3)
+    top_k = position.top_k if position.top_k is not None else 3
+    return chess_engine.get_human_move(
+        position.fen, position.last_16_moves, top_k=top_k
+    )
 
 
 @app.post("/get-difficulty")
 def get_difficulty(position: ChessPosition):
     pass
+
+
+@app.post("/get-explanation")
+def get_explanation(position: ChessExplanation):
+    chess_board = chess.Board(position.fen)
+    after_fen = chess_board.push_san(position.move)
+    return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
 
 
 if __name__ == "__main__":
