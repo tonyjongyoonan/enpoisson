@@ -10,8 +10,47 @@
 
 .chessboard-container {
   flex: 0 0 45%;
-  margin-left: 15%;
+  margin-top: -30px;
   border: 6px solid #353434;
   border-radius: 8px;
-  margin-right: 3%;
+}
+
+.white-button, .black-button {
+  margin: 10px auto;
+  background-color: #b59377;
+  box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease 0s;
+  padding: 5px 0px;
+  width: 150px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.buttons {
+  display: block;
+}
+
+.game-buttons {
+  display: block;
+  margin-top: 420px;
+}
+
+.reset-button, .undo-button {
+  margin: 10px auto;
+  margin-left: 40px;
+  background-color: #b59377;
+  box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease 0s;
+  padding: 5px 0px;
+  width: 100px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.game-container {
+  display: flex;
 }
