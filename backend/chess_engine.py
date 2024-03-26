@@ -5,7 +5,6 @@ import chess
 from nn_models import *
 from utils import fen_to_array_two, is_legal_move
 from typing import List
-import os
 
 vocab_path = "vocab.pkl"
 model_path = "multimodalmodel-exp-12.pth"
@@ -22,7 +21,7 @@ class ChessEngine:
         self.d_out = len(self.vocab.id_to_move.keys())
         self.model = MultiModalSeven(
             self.vocab, self.d_embed, self.d_hidden, self.d_out
-        ).to(self.device)
+        )
         self.model.load_state_dict(torch.load(model_path, map_location=self.device))
         self.model.eval()  # Set the model to evaluation mode
 
