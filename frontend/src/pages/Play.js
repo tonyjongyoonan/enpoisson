@@ -53,7 +53,8 @@ const Play = () => {
         },
         body: JSON.stringify({
           fen: chess.current.fen(), 
-          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves)
+          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
+          is_white: chess.current.turn() === 'w'
         })
       });
       const data = await response.json();
