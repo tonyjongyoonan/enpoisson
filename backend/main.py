@@ -73,7 +73,8 @@ def get_difficulty(position: ChessPosition):
 @app.post("/get-explanation")
 def get_explanation(position: ChessExplanation):
     chess_board = chess.Board(position.fen)
-    after_fen = chess_board.push_san(position.move)
+    chess_board.push_san(position.move)
+    after_fen = chess_board.fen()
     return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
 
 
