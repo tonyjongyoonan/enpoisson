@@ -19,6 +19,9 @@ const Play = () => {
 
   const handleColorChange = (newColor) => {
     setColor(newColor);
+    if (newColor === 'black') {
+      // run the first move
+    }
   };
   
   const getEngineMove =  {
@@ -56,7 +59,7 @@ const Play = () => {
           position={fen}
           onPieceDrop={onDrop}
           onPieceClick={(square) => console.log({ square })}
-          orientation={color}
+          boardOrientation={color}
           boardWidth={560}
           arePiecesDraggable={true}
         />
