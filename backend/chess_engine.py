@@ -99,13 +99,10 @@ class ChessEngine:
         # each index contains the probability of the move representing that index
         model_output_decimal = torch.softmax(model_output, dim=0)
         top_k_moves = self.top_k_legal_moves(fen, sorted_move_indices, top_k=top_k)
-        return [
-            {
-                "move": move,
-                "probability": model_output_decimal[self.vocab.move_to_id[move]].item(),
-            }
+        return {
+            move: model_output_decimal[self.vocab.move_to_id[move]].item()
             for move in top_k_moves
-        ]
+        }
 
 
 if __name__ == "__main__":
