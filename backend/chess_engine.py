@@ -30,6 +30,10 @@ class ChessEngine:
         return last_move_sequence_ids + [0 for _ in range(16 - sequence_length)]
 
     def top_k_legal_moves(self, fen: str, sorted_indices: torch.Tensor, *, top_k: int):
+        """
+        Finds the top_k legal moves. Uses short-circuit evaluation so it is faster
+        than filtering the whole set of possitive moves.
+        """
         chess_board = chess.Board(fen)
         output_moves = []
         for move_idx in sorted_indices:
@@ -88,16 +92,19 @@ class ChessEngine:
             model_output = self.call_model(
                 board, last_move_sequence_ids, sequence_length
             )
-        output_probabilities = torch.softmax(
-            model_output,
-            dim=0,
-        )
         # add difficulty bar here
         sorted_probs, sorted_indices = torch.sort(model_output, descending=True)
-        # FIXME: should probably make a map or something to preserve the probability after legality filtering
         sorted_probs_decimals = torch.softmax(sorted_probs, dim=0)
+        # Create a map from index to probability
+        index_to_prob = {
+            index.item(): prob.item()
+            for index, prob in zip(sorted_indices, sorted_probs_decimals)
+        }
         top_k_moves = self.top_k_legal_moves(fen, sorted_indices, top_k=top_k)
-        return top_k_moves
+        return [
+            {"move": move, "probability": index_to_prob[self.vocab.move_to_id[move]]}
+            for move in top_k_moves
+        ]
 
 
 if __name__ == "__main__":
