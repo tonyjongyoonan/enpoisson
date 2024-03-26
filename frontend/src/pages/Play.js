@@ -44,7 +44,8 @@ const Play = () => {
     // }
     const fen = chess.current.fen();
     const last_16_moves = chess.current.history().slice(Math.max(0, no_moves - 16), no_moves);
-    console.log({ fen, last_16_moves });
+    const is_white_move = chess.current.turn() === 'w';
+    console.log({ fen, last_16_moves, is_white_move });
     try {
       const response = await fetch("http://localhost:8000/get-human-move", {
         method: "POST",
@@ -52,9 +53,7 @@ const Play = () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          fen: chess.current.fen(), 
-          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
-          is_white: chess.current.turn() === 'w'
+          fen, last_16_moves, is_white_move
         })
       });
       const data = await response.json();
