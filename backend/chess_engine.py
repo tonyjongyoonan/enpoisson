@@ -93,16 +93,15 @@ class ChessEngine:
                 board, last_move_sequence_ids, sequence_length
             )
         # add difficulty bar here
-        sorted_probs, sorted_indices = torch.sort(model_output, descending=True)
-        sorted_probs_decimals = torch.softmax(sorted_probs, dim=0)
-        # Create a map from index to probability
-        index_to_prob = {
-            index.item(): prob.item()
-            for index, prob in zip(sorted_indices, sorted_probs_decimals)
-        }
+        _, sorted_indices = torch.sort(model_output, descending=True)
+        # each index contains the probability of the move representing that index
+        model_output_decimal = torch.softmax(model_output, dim=0)
         top_k_moves = self.top_k_legal_moves(fen, sorted_indices, top_k=top_k)
         return [
-            {"move": move, "probability": index_to_prob[self.vocab.move_to_id[move]]}
+            {
+                "move": move,
+                "probability": model_output_decimal[self.vocab.move_to_id[move]].item(),
+            }
             for move in top_k_moves
         ]
 
