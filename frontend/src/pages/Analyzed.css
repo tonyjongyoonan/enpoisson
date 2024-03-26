@@ -41,6 +41,7 @@
 
 .analysis-button-container {
   display: flex;
+  gap: 10px;
 }
 
 .analysis-back {
@@ -50,6 +51,7 @@
   border: 3px solid #353434;
   border-radius: 8px;
   background-color: #353434;
+  cursor: pointer;
 }
 
 .analysis-move {
@@ -59,6 +61,7 @@
   border: 3px solid #353434;
   border-radius: 8px;
   background-color: #353434;
+  cursor: pointer;
 }
 
 .analysis-explanation-container {

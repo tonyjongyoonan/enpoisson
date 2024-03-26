@@ -36,11 +36,15 @@ const Analyzed = () => {
 
   const handleChange = (option) => {
     setSelected(option);
+    setArrows([]);
+    setFeedback("");
   }
 
   useEffect(() => {
-    if (selected.value === "game" && moves.length > 0) {
-      console.log("yes");
+    if (index >= moves.length) {
+      setArrows([]);
+    }
+    else if (selected.value === "game" && moves.length > 0) {
       const move_info = chess.current.move(moves[index]);
       setArrows([[move_info["from"], move_info["to"]]])
       chess.current.undo();
@@ -143,8 +147,8 @@ const Analyzed = () => {
           <div className="explanation-selector-container">
             <Select className="analysis-select" value={selected} onChange={handleChange} options={options} />
             { selected.value !== "game" ? 
-              <p> Most likely move: filler </p>
-            : <p> Next played move: {moves[index]} </p>
+              <p>{ chess.current.isCheckmate() ? "Checkmate!" : "Most likely move: filler" } </p> :
+              <p>{ index < moves.length ? "Next played move: " + moves[index] : "Game is over!" }</p>
             }
             <button onClick={(e) => generateExplanation()}>Explain</button>
           </div>
