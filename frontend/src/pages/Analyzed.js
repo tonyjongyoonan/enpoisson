@@ -52,7 +52,7 @@ const Analyzed = () => {
   }, [selected, index, moves])
 
   const generateExplanation = () => {
-    setFeedback("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.")
+    setFeedback("The castle move by Black (O-O-O), though it appears to result in some slight short term losses, might set up a more advantageous strategic situation in the long run. The material count remains unchanged at 5559, indicating no pieces were lost or exchanged in this move. The move increases Black's control over the board from 37 to 46 squares, implying that Black has expanded their influence on the game. While the castle move moved the king further away from the nearest black pawn, thus potentially leading to a slightly more exposed position, the shift in control indicates a broader control of the board. However, the move leaves one of Black's pieces hanging, potentially creating a risk for the next moves. This move might signal a transition from a defensive to more offensive play for Black.")
   }
 
   const updateMove = (x) => {
@@ -131,8 +131,7 @@ const Analyzed = () => {
       </div>
       <div className="analysis-page-container">
         {/* <Progress.Line showInfo={false} strokeColor={"white"} vertical={true}/> */}
-        <Bar color={"black"} value={50} label={"+0.0"}/>
-        <Bar color={"blue"} value={80} label={"hard"}/>
+        <Bar color={"black"} value={25} label={"easy"}/>
         <div className="chessboard-container">
           <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
         </div>
