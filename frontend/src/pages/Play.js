@@ -9,11 +9,7 @@ import './Play.css';
 const Play = () => {
   const [fen, setFen] = useState('start');
   const chess = useRef(new Chess());
-  const [index, setIndex] = useState(0);
-  const [moves, setMoves] = useState([]);
   const location = useLocation();
-  const [selected, setSelected] = useState({ value: 'game', label: 'Played move'});
-  const [arrows, setArrows] = useState([]);
   const [color, setColor] = useState(null);
   const [turn, setTurn] = useState('white');
 
@@ -32,10 +28,13 @@ const Play = () => {
   const handleColorChange = (newColor) => {
     setColor(newColor);
     if (newColor === 'black') {
-      // have a 0.1 second timer, then play a random move
+      const opening_moves = ['e4', 'd4', 'Nf3']
+      // play one out of the three
+      const move = opening_moves[Math.floor(Math.random() * opening_moves.length)];
       setTimeout(() => {
-        playRandomMove();
-      }, 1250);
+        chess.current.move(move);
+        setFen(chess.current.fen());
+      }, 500);
     }
   };
   
@@ -58,11 +57,29 @@ const Play = () => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          fen, last_16_moves, is_white_move
+          fen: chess.current.fen(), 
+          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
+          is_white_move: true // chess.current.turn() === 'w'
         })
       });
       const data = await response.json();
       console.log(data);
+      chess.current.move(data[0]);
+      setFen(chess.current.fen());
+      // make the move
+      // let move = chess.current.move({
+      //   from: sourceSquare,
+      //   to: targetSquare,
+      //   promotion: 'q'
+      // });
+      // if (move === null) return;
+      // if (chess.current.isGameOver() || chess.current.isDraw()) return false;
+      // setFen(chess.current.fen());
+      // if (chess.current.isCheckmate()) {
+      //   console.log('checkmate');
+      // } else if (chess.current.isDraw()) {
+      //   console.log('draw');
+      // }
       // Process the engine move data
     } catch (error) {
       console.log(error);
@@ -80,7 +97,7 @@ const Play = () => {
         promotion: 'q'
       });
       if (move === null) return;
-      if (chess.current.isGameOver() || chess.current.isDraw()) return false;
+      if (chess.current.isGameOver() || chess.current.isDraw()) return false; // TODO: FIX
       setFen(chess.current.fen());
       if (chess.current.isCheckmate()) {
         console.log('checkmate');
@@ -91,7 +108,7 @@ const Play = () => {
       // find engine move
       // getEngineMove();
       setTimeout(() => {
-        playRandomMove();
+        getEngineMove();
       }, 500);
       if (chess.current.isCheckmate()) {
         console.log('checkmate');
@@ -134,7 +151,7 @@ const Play = () => {
               // TODO: replace with model move
               if (color === 'black') {
                 setTimeout(() => {
-                  playRandomMove();
+                  getEngineMove();
                 }, 500);
               }
             }}>reset</button></div>
