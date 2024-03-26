@@ -10,8 +10,7 @@
   border: 6px solid #353434;
   border-radius: 8px;
   height: 100%;
-  margin-left: 0;
-  margin-right: 0;
+  margin: 0 0 0 0;
 }
 
 .analysis-text-container {

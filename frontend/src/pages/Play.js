@@ -14,13 +14,23 @@ const Play = () => {
   const location = useLocation();
   const [selected, setSelected] = useState({ value: 'game', label: 'Played move'});
   const [arrows, setArrows] = useState([]);
-  const [color, setColor] = useState('white');
+  const [color, setColor] = useState(null);
   const [turn, setTurn] = useState('white');
+
+  const playRandomMove = () => {
+    const moves = chess.current.moves();
+    const move = moves[Math.floor(Math.random() * moves.length)];
+    chess.current.move(move);
+    setFen(chess.current.fen());
+  };
 
   const handleColorChange = (newColor) => {
     setColor(newColor);
     if (newColor === 'black') {
-      // run the first move
+      // have a 0.1 second timer, then play a random move
+      setTimeout(() => {
+        playRandomMove();
+      }, 1250);
     }
   };
   
@@ -70,7 +80,10 @@ const Play = () => {
       setFen(chess.current.fen());
 
       // find engine move
-      getEngineMove();
+      // getEngineMove();
+      setTimeout(() => {
+        playRandomMove();
+      }, 500);
 
     } catch (error) {
       console.log(error);
@@ -80,34 +93,53 @@ const Play = () => {
 
   return (
     <div className="play-page-container">
-      <div className="chessboard-container">
-        <Chessboard
-          position={fen}
-          onPieceDrop={onDrop}
-          onPieceClick={(square) => console.log({ square })}
-          boardOrientation={color}
-          boardWidth={560}
-          arePiecesDraggable={true}
-        />
-      </div>
-      <div className="color-choice-container">
-        <button onClick={() => handleColorChange('white')}>Play as White</button>
-        <button onClick={() => handleColorChange('black')}>Play as Black</button>
-      </div>
-      <div className="play-button-container">
-      <button onClick={() => {
-          chess.current.reset();
-          setFen(chess.current.fen());
-        }}>reset</button>
-      <button onClick={() => {
-          chess.current.undo();
-          chess.current.undo(); // undo twice to undo model move as well
-          // TODO: make sure to error check for when there's only one move played
-          setFen(chess.current.fen());
-        }}>undo</button>
-      </div>
+      {!color && (<div className="buttons">
+        <div>
+          <button className="white-button" onClick={() => handleColorChange('white')}>play as white</button>
+        </div>
+        <div>
+          <button className="black-button" onClick={() => handleColorChange('black')}>play as black</button>
+        </div>
+      </div>)}
+
+      {color && (
+        <div className="game-container">
+          <div className="chessboard-container">
+            <Chessboard
+              position={fen}
+              onPieceDrop={onDrop}
+              onPieceClick={(square) => console.log({ square })}
+              boardOrientation={color}
+              boardWidth={560}
+              arePiecesDraggable={true}
+            />
+          </div>
+          <div className="game-buttons">
+            <div><button className="reset-button" onClick={() => {
+              chess.current.reset(); 
+              setFen(chess.current.fen());
+              // TODO: replace with model move
+              if (color === 'black') {
+                setTimeout(() => {
+                  playRandomMove();
+                }, 500);
+              }
+            }}>reset</button></div>
+            <div><button className="undo-button" onClick={() => {
+                  setTimeout(() => {
+                    chess.current.undo();
+                    setFen(chess.current.fen());
+                  }, 200); // buffer time looks appropriate
+                  setTimeout(() => {
+                    chess.current.undo();
+                    setFen(chess.current.fen());
+                  }, 600); // undo twice to undo model move as well
+                }}>undo</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};  
+}
 
 export default Play;
