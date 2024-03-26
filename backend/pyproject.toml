@@ -20,6 +20,7 @@ torch = "^2.2.1"
 grad-cam = "^1.5.0"
 dask = {extras = ["dataframe"], version = "^2024.3.1"}
 chess = "^1.10.0"
+openai = "^1.14.3"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^7.0.0"
