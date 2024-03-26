@@ -7,19 +7,6 @@ function Home() {
   const gold = "#ffc703";
   const [currentUser, setCurrentUser] = useState(null);
 
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/current-user')
-        setCurrentUser(response.data.username);
-      } catch (error) {
-        console.error('Error fetching current user:', error);
-      }
-    };
-
-    fetchCurrentUser();
-  }, []);
-
   return (
     <div class="grid-container">
       <div

@@ -46,10 +46,6 @@ const Play = () => {
     // for (let i = 0; i < no_moves; i++) {
     //   model_input_json.moves.push({ "fen": chess.current.fen(), "last_16_moves": moves_made.slice(Math.max(0, i - 16), i), "is_white": history[i].color === 'w' });
     // }
-    const fen = chess.current.fen();
-    const last_16_moves = chess.current.history().slice(Math.max(0, no_moves - 16), no_moves);
-    const is_white_move = chess.current.turn() === 'w';
-    console.log({ fen, last_16_moves, is_white_move });
     try {
       const response = await fetch("http://localhost:8000/get-human-move", {
         method: "POST",
@@ -59,28 +55,43 @@ const Play = () => {
         body: JSON.stringify({
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
-          is_white_move: true // chess.current.turn() === 'w'
+          is_white_move: turn === 'white' ? false : true // if player is white, then return false (black) since we want model to give black move
         })
       });
       const data = await response.json();
       console.log(data);
-      chess.current.move(data[0]);
-      setFen(chess.current.fen());
-      // make the move
-      // let move = chess.current.move({
-      //   from: sourceSquare,
-      //   to: targetSquare,
-      //   promotion: 'q'
-      // });
-      // if (move === null) return;
-      // if (chess.current.isGameOver() || chess.current.isDraw()) return false;
-      // setFen(chess.current.fen());
-      // if (chess.current.isCheckmate()) {
-      //   console.log('checkmate');
-      // } else if (chess.current.isDraw()) {
-      //   console.log('draw');
-      // }
-      // Process the engine move data
+      const moves = Object.keys(data);
+      const probabilities = Object.values(data);
+      const sumProb = probabilities.reduce((a, b) => a + b, 0);
+      for (let i = 0; i < probabilities.length; i++) {
+        probabilities[i] /= sumProb;
+      }
+      console.log(moves);
+      console.log(probabilities);
+      const threshold = Math.random();
+      console.log("threshold: " + threshold);
+      let runningProb = probabilities[0];
+      let selectedMove = null;
+      for (let i = 0; i < moves.length; i++) {
+        console.log("runningProb: " + runningProb);
+        if (runningProb > threshold) {
+          selectedMove = moves[i];
+          break;
+        }
+        runningProb += probabilities[i + 1];
+      }
+
+      if (selectedMove) {
+        chess.current.move(selectedMove);
+        setFen(chess.current.fen());
+        if (chess.current.isCheckmate()) {
+          console.log('checkmate');
+        } else if (chess.current.isDraw()) {
+          console.log('draw');
+        }
+      } else {
+        console.log('error: no move selected');
+      }
     } catch (error) {
       console.log(error);
     }
@@ -89,7 +100,6 @@ const Play = () => {
   // Function to handle piece drop
   const onDrop = (sourceSquare, targetSquare, piece) => {
     try {
-      console.log(chess.current.turn());
       // if (turn !== chess.current.turn()) return;
       let move = chess.current.move({
         from: sourceSquare,
@@ -105,15 +115,15 @@ const Play = () => {
         console.log('draw');
       }
 
-      // find engine move
-      // getEngineMove();
       setTimeout(() => {
         getEngineMove();
       }, 500);
       if (chess.current.isCheckmate()) {
         console.log('checkmate');
+        <input type="text" value="Game is over" readOnly />
       } else if (chess.current.isDraw()) {
         console.log('draw');
+        <input type="text" value="Game is over" readOnly />
       }
     } catch (error) {
       console.log(error);
@@ -138,21 +148,18 @@ const Play = () => {
             <Chessboard
               position={fen}
               onPieceDrop={onDrop}
-              onPieceClick={(square) => console.log({ square })}
               boardOrientation={color}
               boardWidth={560}
               arePiecesDraggable={true}
             />
           </div>
+
           <div className="game-buttons">
             <div><button className="reset-button" onClick={() => {
-              chess.current.reset(); 
+              chess.current.reset();
               setFen(chess.current.fen());
-              // TODO: replace with model move
               if (color === 'black') {
-                setTimeout(() => {
-                  getEngineMove();
-                }, 500);
+                handleColorChange('black');
               }
             }}>reset</button></div>
             <div><button className="undo-button" onClick={() => {

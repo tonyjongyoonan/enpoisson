@@ -34,7 +34,7 @@
 
 .game-buttons {
   display: block;
-  margin-top: 420px;
+  margin-top: 300px;
 }
 
 .reset-button, .undo-button {
@@ -53,4 +53,12 @@
 
 .game-container {
   display: flex;
+}
+
+.commentary {
+  flex: 0 0 45%;
+  margin-left: 20px;
+  margin-top: -250px;
+  border: 6px solid #353434;
+  border-radius: 8px;
 }
