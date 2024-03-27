@@ -5,7 +5,7 @@ description = ""
 authors = ["nlao1 <nlao@seas.upenn.edu>"]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
+python = ">=3.10,<4.0"
 fastapi = "^0.109.0"
 uvicorn = "^0.26.0"
 httpx = "^0.26.0"
