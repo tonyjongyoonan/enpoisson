@@ -36,7 +36,7 @@ const Analyzed = () => {
     if (option.value !== 'game') {
       setTimeout(() => {
         getEngineMove();
-      }, 500)
+      }, 10)
     }
     setSelected(option);
     setArrows([]);
@@ -143,6 +143,7 @@ const Analyzed = () => {
     }
     chess.current.undo();
     setFen(chess.current.fen());
+    setRecMove("");
     setIndex(index - 1);
   }
 
@@ -169,7 +170,7 @@ const Analyzed = () => {
     if (selected.value !== 'game') {
       setTimeout(() => {
         getEngineMove();
-      }, 500)
+      }, 10)
     }
   }, [index])
 
