@@ -12,6 +12,8 @@ const options = [
   { value: '1500', label: '1500 ELO most human move'}
 ]
 
+const difficulty = [0, 3, 4, 3, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 2, 6, 9, 10, 11, 23, 11, 35, 13, 46, 23, 14, 56, 13, 60, 80, 73, 70, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14]
+
 const Analyzed = () => {
   const [fen, setFen] = useState('start');
   const chess = useRef(new Chess());
@@ -56,6 +58,7 @@ const Analyzed = () => {
       chess.current.move(moves[i]);
     }
     setFen(chess.current.fen());
+    setRecMove("");
     setIndex(x);
   }
 
@@ -167,6 +170,7 @@ const Analyzed = () => {
 
   useEffect(() => {
     setRecMove("");
+    setFeedback("");
     if (selected.value !== 'game') {
       setTimeout(() => {
         getEngineMove();
@@ -195,7 +199,7 @@ const Analyzed = () => {
       </div>
       <div className="analysis-page-container">
         {/* <Progress.Line showInfo={false} strokeColor={"white"} vertical={true}/> */}
-        <Bar color={"black"} value={25} label={"easy"}/>
+        <Bar color={"black"} value={difficulty[index]} label={difficulty[index] < 30 ? "easy" : difficulty[index] < 70 ? "med" : "hard"}/>
         <div className="chessboard-container">
           <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
         </div>

@@ -21,7 +21,7 @@ export default function Bar(props) {
     return(
         <div style={containerStyle}>
             <div style={fillerStyle}>
-                <span>{label}</span>
+                <span style={{color: value < 3 ? "black" : "white"}}>{label}</span>
             </div>
         </div>
     )
