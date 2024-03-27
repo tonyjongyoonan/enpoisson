@@ -58,6 +58,9 @@ const Analyzed = () => {
   }, [selected, index, moves, recMove])
 
   const generateExplanation = () => {
+    setTimeout(() => {
+      getExplanation();
+    }, 500)
     setFeedback("an error occurred");
     // setFeedback("The castle move by Black (O-O-O), though it appears to result in some slight short term losses, might set up a more advantageous strategic situation in the long run. The material count remains unchanged at 5559, indicating no pieces were lost or exchanged in this move. The move increases Black's control over the board from 37 to 46 squares, implying that Black has expanded their influence on the game. While the castle move moved the king further away from the nearest black pawn, thus potentially leading to a slightly more exposed position, the shift in control indicates a broader control of the board. However, the move leaves one of Black's pieces hanging, potentially creating a risk for the next moves. This move might signal a transition from a defensive to more offensive play for Black.")
   }
