@@ -43,20 +43,6 @@ const Analyzed = () => {
     setFeedback("");
   }
 
-  useEffect(() => {
-    if (index >= moves.length) {
-      setArrows([]);
-    } else if (selected.value === "game" && moves.length > 0) {
-      const move_info = chess.current.move(moves[index]);
-      setArrows([[move_info["from"], move_info["to"]]])
-      chess.current.undo();
-    } else if (recMove !== "") {
-      const move_info = chess.current.move(recMove);
-      setArrows([[move_info["from"], move_info["to"]]])
-      chess.current.undo();
-    }
-  }, [selected, index, moves, recMove])
-
   const generateExplanation = () => {
     setTimeout(() => {
       getExplanation();
@@ -80,6 +66,7 @@ const Analyzed = () => {
 
     chess.current.move(moves[index]);
     setFen(chess.current.fen());
+    setRecMove("");
     setIndex(index + 1);
   }
 
@@ -92,7 +79,7 @@ const Analyzed = () => {
         },
         body: JSON.stringify({
           fen: chess.current.fen(),
-          move: moves[index],
+          move: selected.value === 'game' ? moves[index] : recMove,
           is_white_move: moves.length % 2 === 1,
         })
       });
@@ -176,6 +163,29 @@ const Analyzed = () => {
     const temp = getPgnMoves(pgn);
     setMoves(temp); // format: ['e4', 'e5', ..., 'Nf3', 'Nc6']
   }, [pgn]);
+
+  useEffect(() => {
+    setRecMove("");
+    if (selected.value !== 'game') {
+      setTimeout(() => {
+        getEngineMove();
+      }, 500)
+    }
+  }, [index])
+
+  useEffect(() => {
+    if (index >= moves.length) {
+      setArrows([]);
+    } else if (selected.value === "game" && moves.length > 0) {
+      const move_info = chess.current.move(moves[index]);
+      setArrows([[move_info["from"], move_info["to"]]])
+      chess.current.undo();
+    } else if (recMove !== "") {
+      const move_info = chess.current.move(recMove);
+      setArrows([[move_info["from"], move_info["to"]]])
+      chess.current.undo();
+    }
+  }, [selected, index, moves, recMove])
 
   return (
     <div className="analysis-page-layout">
