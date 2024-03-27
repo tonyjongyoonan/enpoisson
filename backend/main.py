@@ -80,6 +80,15 @@ def get_explanation(position: ChessExplanation):
     return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
 
 
+# x: a numpy array of top 5 stockfish evaluations
+# probabilities: a numpy array of probabilities of playing each move
+# def get_difficulty(x, probabilities):
+#     scaled_x = x/0.9
+#     result = 1 / (1 + np.exp(-scaled_x))
+#     sum_x = np.sum(result)
+#     normalized_result = result / sum_x
+#     return np.dot(normalized_result, probabilities)
+
 if __name__ == "__main__":
     print(argon2.hash("password"))
     print(
