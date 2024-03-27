@@ -36,3 +36,7 @@ Eventually we could upgrade to docker which might make some of this easier.
 ## Credentials
 
 You need a `.env` file to store the credentials for the code to work.
+
+## OpenAI
+
+You also need to add OPENAI_API_KEY to your environment file.
