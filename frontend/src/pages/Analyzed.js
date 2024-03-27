@@ -93,7 +93,7 @@ const Analyzed = () => {
         },
         body: JSON.stringify({
           fen: chess.current.fen(),
-          move: recMove,
+          move: moves[index],
           is_white_move: moves.length % 2 === 1,
         })
       });
