@@ -9,11 +9,11 @@ import './Play.css';
 const Play = () => {
   const [fen, setFen] = useState('start');
   const chess = useRef(new Chess());
-  const location = useLocation();
   const [color, setColor] = useState(null);
   const [turn, setTurn] = useState('white');
   const [isCheckmate, setIsCheckmate] = useState(false);
   const [isDraw, setIsDraw] = useState(false);
+  const [level, setLevel] = useState(null);
 
   const playRandomMove = () => {
     const moves = chess.current.moves();
@@ -144,7 +144,18 @@ const Play = () => {
         </div>
       </div>)}
 
-      {color && (
+      {color && !level && (<div className="level-buttons">
+        <div>
+        <button className="level-500-button" onClick={() => setLevel(500)}>play vs. 500</button>
+      </div>
+      <div>
+        <button className="level-1000-button" onClick={() => setLevel(1000)}>play vs. 1000</button>
+      </div>
+      <div>
+        <button className="level-1500-button" onClick={() => setLevel(1500)}>play vs. 1500</button>
+      </div>
+    </div>)}
+      {color && level && (
         <div className="game-container">
           <div className="chessboard-container">
             <Chessboard
