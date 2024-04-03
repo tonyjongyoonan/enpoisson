@@ -12,6 +12,8 @@ const Play = () => {
   const location = useLocation();
   const [color, setColor] = useState(null);
   const [turn, setTurn] = useState('white');
+  const [isCheckmate, setIsCheckmate] = useState(false);
+  const [isDraw, setIsDraw] = useState(false);
 
   const playRandomMove = () => {
     const moves = chess.current.moves();
@@ -69,11 +71,9 @@ const Play = () => {
       console.log(moves);
       console.log(probabilities);
       const threshold = Math.random();
-      console.log("threshold: " + threshold);
       let runningProb = probabilities[0];
       let selectedMove = null;
       for (let i = 0; i < moves.length; i++) {
-        console.log("runningProb: " + runningProb);
         if (runningProb > threshold) {
           selectedMove = moves[i];
           break;
@@ -86,8 +86,10 @@ const Play = () => {
         setFen(chess.current.fen());
         if (chess.current.isCheckmate()) {
           console.log('checkmate');
+          setIsCheckmate(true);
         } else if (chess.current.isDraw()) {
           console.log('draw');
+          setIsDraw(true);
         }
       } else {
         console.log('error: no move selected');
@@ -153,16 +155,21 @@ const Play = () => {
               arePiecesDraggable={true}
             />
           </div>
-
           <div className="game-buttons">
+            {isCheckmate && <input type="text" value="Checkmate!" readOnly className="checkmate-box" />}
+            {isDraw && <input type="text" value="Stalemate!" readOnly className="stalemate-box" />}
             <div><button className="reset-button" onClick={() => {
               chess.current.reset();
               setFen(chess.current.fen());
+              setIsCheckmate(false);
+              setIsDraw(false);
               if (color === 'black') {
                 handleColorChange('black');
               }
             }}>reset</button></div>
             <div><button className="undo-button" onClick={() => {
+                  setIsCheckmate(false);
+                  setIsDraw(false);
                   setTimeout(() => {
                     chess.current.undo();
                     setFen(chess.current.fen());

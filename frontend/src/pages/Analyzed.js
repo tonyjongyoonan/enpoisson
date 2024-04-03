@@ -12,7 +12,7 @@ const options = [
   { value: '1500', label: '1500 ELO most human move'}
 ]
 
-const difficulty = [0, 3, 4, 3, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 2, 6, 9, 10, 11, 23, 11, 35, 13, 46, 23, 14, 56, 13, 60, 80, 73, 70, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14]
+const difficulty = [0, 3, 4, 3, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 2, 6, 9, 10, 11, 23, 11, 35, 13, 46, 23, 14, 56, 13, 60, 80, 73, 70, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14]
 
 const Analyzed = () => {
   const [fen, setFen] = useState('start');
@@ -36,9 +36,7 @@ const Analyzed = () => {
 
   const handleChange = (option) => {
     if (option.value !== 'game') {
-      setTimeout(() => {
-        getEngineMove();
-      }, 10)
+      getEngineMove();
     }
     setSelected(option);
     setArrows([]);
@@ -117,6 +115,7 @@ const Analyzed = () => {
       }
       console.log(returned_moves);
       console.log(probabilities);
+      console.log(chess.current.fen());
       const threshold = Math.random();
       console.log("threshold: " + threshold);
       let runningProb = probabilities[0];
@@ -172,9 +171,7 @@ const Analyzed = () => {
     setRecMove("");
     setFeedback("");
     if (selected.value !== 'game') {
-      setTimeout(() => {
-        getEngineMove();
-      }, 10)
+      getEngineMove();
     }
   }, [index])
 
@@ -186,9 +183,22 @@ const Analyzed = () => {
       setArrows([[move_info["from"], move_info["to"]]])
       chess.current.undo();
     } else if (recMove !== "") {
-      const move_info = chess.current.move(recMove);
-      setArrows([[move_info["from"], move_info["to"]]])
-      chess.current.undo();
+      let move_info;
+      try { 
+        move_info = chess.current.move(recMove);
+        setArrows([[move_info["from"], move_info["to"]]])
+        chess.current.undo();
+      } catch (error) {
+        console.log(moves[index]);
+        try {
+          move_info = chess.current.move(moves[index]);
+          setArrows([[move_info["from"], move_info["to"]]])
+          chess.current.undo();
+        } catch (error) {
+          setRecMove("");
+        }
+        setRecMove(moves[index]);
+      }
     }
   }, [selected, index, moves, recMove])
 
