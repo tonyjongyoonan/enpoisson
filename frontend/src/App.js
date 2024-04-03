@@ -7,6 +7,7 @@ import Analyzed from "./pages/Analyzed";
 import Login from "./pages/Login";
 import Account from "./pages/Account";
 import Team from "./pages/Team";
+import Tech from "./pages/Tech";
 import NotFound from "./pages/NotFound";
 import Footer from "./components/Footer";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
@@ -24,6 +25,7 @@ function App() {
           <Route path="/login" exact element={<Login />} />
           <Route path="/account" exact element={<Account />} />     
           <Route path="/team" exact element={<Team />} />     
+          <Route path="/tech" element={<Tech />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Footer />

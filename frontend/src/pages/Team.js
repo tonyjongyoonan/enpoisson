@@ -59,11 +59,14 @@ const Team = () => {
                 <p>We are a group of students at the University of Pennsylvania</p>
                 <p>Interested in the intersection of Chess education and AI/ML.</p>
                 <p style={{ marginBottom: '1.5rem' }}></p>
-                <p>Our Chess engine recommends powerful,</p>
+                <a href="tech" className="large-link">En Poisson</a> is a model that recommends powerful,
                 <p>human-like moves, avoiding the chaos and confusion</p>
                 <p>typically associated with Stockfish and other engines.</p>
+                <p style={{ marginBottom: '1.5rem' }}></p>
+                <p>As of March 2024,</p>
+                <p>En Poisson is more performant than the current SOTA model, Maia.</p>
+                </div>
             </div>
-        </div>
     );
 };
 export default Team;

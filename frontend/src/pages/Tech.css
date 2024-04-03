@@ -1,0 +1,22 @@
+.poster-container {
+    display: flex;
+    justify-content: center;
+    margin-top: -0.5rem;
+}
+
+.poster-img {
+    width: 450px;
+    height: auto;
+    border: 6px solid #353434;
+    border-radius: 5px;  
+}
+
+.tech-description {
+    margin-top: 3.5rem;
+    text-align: center;
+}
+
+.large-link {
+    font-size: 1.2rem;
+    color: white;
+}
