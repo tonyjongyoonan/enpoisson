@@ -8,6 +8,7 @@ import numpy as np
 import dask.dataframe as dd 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
+from multiprocessing import Pool
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -312,13 +313,79 @@ def df_to_data_fen_only(df, fixed_window=False, fixed_window_size=8, sampling_ra
                     subsequence = sequence[sep_indices[i-fixed_window_size]:move_indices[i]+1]
                 else:
                     subsequence = sequence[:move_indices[i]+1]
-                subsequence += [vocab.get_id('<CLS>')]
                 subsequences.append(subsequence)
                 # Label
                 label = sequence[move_indices[i]+1:sep_indices[i]]
                 next_moves.append(label)
             
     return subsequences, next_moves, vocab
+
+def df_to_data_fen_only_padded(df, fixed_window=False, fixed_window_size=8, sampling_rate=1, algebraic_notation=True, vocab=None):
+    if vocab is None:
+        vocab = VocabularyForTransformer()
+    vocab.add_move(' ')
+    subsequences, next_moves, seq_lengths = [],[],[]
+    chess_board = chess.Board()
+    
+    # Constants for padding
+    SUBSEQUENCE_PAD_LENGTH = 750
+    LABEL_PAD_LENGTH = 7
+    pad_id = vocab.get_id('<PAD>')  # Assuming you have a PAD token in your vocabulary
+
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        boards = game_board.split("*")
+        sequence = [1]  # Starting token, adjust as necessary
+        for move, board in zip(moves, boards):
+            move_obj = chess.Move.from_uci(move)
+            if move_obj not in chess_board.legal_moves:
+                break
+            algebraic_move = chess_board.san(move_obj) if algebraic_notation else move
+            chess_board.push(move_obj)
+            # Process the algebraic move and board for vocabulary
+            temp1, temp2 = [],[]
+            for char in algebraic_move:
+                vocab.add_move(char)
+                temp1.append(char)
+            expanded_fen = expand_fen(board.strip())
+            for char in expanded_fen:
+                vocab.add_move(char)
+                temp2.append(char)
+            # Append tokens to sequence
+            sequence.extend([
+                vocab.get_id("<BOARD>"),
+                *temp2,
+                vocab.get_id("<MOVE>"),
+                *temp1,
+                vocab.get_id("<SEP>")
+            ])
+        
+        chess_board.reset()
+
+        move_indices = [i for i, token in enumerate(sequence) if token == vocab.get_id('<MOVE>')]
+        sep_indices = [i for i, token in enumerate(sequence) if token == vocab.get_id('<SEP>')]
+
+        for i, (move_index, sep_index) in enumerate(zip(move_indices, sep_indices)):
+            if random.uniform(0, 1) <= sampling_rate:
+                start_index = sep_indices[i - fixed_window_size] if fixed_window and i >= fixed_window_size else 0
+                subsequence = sequence[start_index:move_index + 1]
+                label = sequence[move_index + 1:sep_index]
+                
+                # Pad subsequence and label
+                subsequence += [pad_id] * (SUBSEQUENCE_PAD_LENGTH - len(subsequence))
+                label += [pad_id] * (LABEL_PAD_LENGTH - len(label))
+                
+                assert len(subsequence) == SUBSEQUENCE_PAD_LENGTH, f"Subsequence length is {len(subsequence)}, expected {SUBSEQUENCE_PAD_LENGTH}"
+                if len(label) != LABEL_PAD_LENGTH:
+                    print([vocab.get_word(i) for i in label])
+                assert len(label) == LABEL_PAD_LENGTH, f"Label length is {len(label)}, expected {LABEL_PAD_LENGTH}"
+
+                seq_lengths.append(len(subsequence))
+                subsequences.append(subsequence)
+                next_moves.append(label)  # Ensure label is exactly 7 tokens long
+
+    return subsequences, next_moves, seq_lengths, vocab
+
 
 # Function to calculate top-3 accuracy
 def top_3_accuracy(y_true, y_pred):
