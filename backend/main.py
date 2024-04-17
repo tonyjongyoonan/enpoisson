@@ -72,14 +72,6 @@ def get_difficulty(position: ChessPosition):
     pass
 
 
-@app.post("/get-explanation")
-def get_explanation(position: ChessExplanation):
-    chess_board = chess.Board(position.fen)
-    chess_board.push_san(position.move)
-    after_fen = chess_board.fen()
-    return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
-
-
 # x: a numpy array of top 5 stockfish evaluations
 # probabilities: a numpy array of probabilities of playing each move
 # def get_difficulty(x, probabilities):
@@ -88,6 +80,15 @@ def get_explanation(position: ChessExplanation):
 #     sum_x = np.sum(result)
 #     normalized_result = result / sum_x
 #     return np.dot(normalized_result, probabilities)
+
+
+@app.post("/get-explanation")
+def get_explanation(position: ChessExplanation):
+    chess_board = chess.Board(position.fen)
+    chess_board.push_san(position.move)
+    after_fen = chess_board.fen()
+    return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
+
 
 if __name__ == "__main__":
     print(argon2.hash("password"))
