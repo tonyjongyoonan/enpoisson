@@ -1,9 +1,6 @@
-// TODO: implement checkmate
-
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
-import { Chess } from 'chess.js'; // Corrected import statement
+import { Chess } from 'chess.js';
 import './Play.css';
 
 const Play = () => {
@@ -41,13 +38,7 @@ const Play = () => {
   };
   
   const getEngineMove = async () => {
-    // const model_input_json = { "moves": [] };
     const no_moves = chess.current.history().length;
-    // const history = chess.current.history().slice(0, no_moves);
-    // const moves_made = moves.slice(0, no_moves); // gets all moves so far
-    // for (let i = 0; i < no_moves; i++) {
-    //   model_input_json.moves.push({ "fen": chess.current.fen(), "last_16_moves": moves_made.slice(Math.max(0, i - 16), i), "is_white": history[i].color === 'w' });
-    // }
     try {
       const response = await fetch("http://localhost:8000/get-human-move", {
         method: "POST",
@@ -57,7 +48,7 @@ const Play = () => {
         body: JSON.stringify({
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
-          is_white_move: turn === 'white' ? false : true // if player is white, then return false (black) since we want model to give black move
+          is_white_move: turn === 'white' ? false : true
         })
       });
       const data = await response.json();
@@ -102,14 +93,13 @@ const Play = () => {
   // Function to handle piece drop
   const onDrop = (sourceSquare, targetSquare, piece) => {
     try {
-      // if (turn !== chess.current.turn()) return;
       let move = chess.current.move({
         from: sourceSquare,
         to: targetSquare,
         promotion: 'q'
       });
       if (move === null) return;
-      if (chess.current.isGameOver() || chess.current.isDraw()) return false; // TODO: FIX
+      if (chess.current.isGameOver() || chess.current.isDraw()) return false;
       setFen(chess.current.fen());
       if (chess.current.isCheckmate()) {
         console.log('checkmate');

@@ -10,7 +10,6 @@ vocab_path = "vocab.pkl"
 model_path = "multimodalmodel-exp-12.pth"
 
 
-# note: can only be used for white positions
 class ChessEngine:
     def __init__(self, model_path):
         self.device = torch.device("cpu")

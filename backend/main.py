@@ -16,8 +16,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-chess_engine_model_path = "multimodalmodel-exp-12.pth"
-chess_engine = ChessEngine(chess_engine_model_path)
+white_model_paths = {1500: "multimodalmodel-white-1500.pth"}
+black_model_paths = {1500: "multimodalmodel-black-1500.pth"}
+chess_engines: dict[tuple[elo_type, bool], ChessEngine] = {
+    (1500, chess.WHITE): ChessEngine(white_model_paths[1500]),
+    (1500, chess.BLACK): ChessEngine(black_model_paths[1500]),
+}
 
 
 @app.post("/login")
@@ -60,7 +64,8 @@ def root():
 @app.post("/get-human-move")
 def get_human_move(position: ChessPosition):
     top_k = position.top_k if position.top_k is not None else 3
-    return chess_engine.get_human_move(
+    elo = position.elo
+    return chess_engines[(elo, position.is_white_move)].get_human_move(
         position.fen, position.last_16_moves, top_k=top_k
     )
 
@@ -72,14 +77,6 @@ def get_difficulty(position: ChessPosition):
     pass
 
 
-@app.post("/get-explanation")
-def get_explanation(position: ChessExplanation):
-    chess_board = chess.Board(position.fen)
-    chess_board.push_san(position.move)
-    after_fen = chess_board.fen()
-    return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
-
-
 # x: a numpy array of top 5 stockfish evaluations
 # probabilities: a numpy array of probabilities of playing each move
 # def get_difficulty(x, probabilities):
@@ -88,6 +85,15 @@ def get_explanation(position: ChessExplanation):
 #     sum_x = np.sum(result)
 #     normalized_result = result / sum_x
 #     return np.dot(normalized_result, probabilities)
+
+
+@app.post("/get-explanation")
+def get_explanation(position: ChessExplanation):
+    chess_board = chess.Board(position.fen)
+    chess_board.push_san(position.move)
+    after_fen = chess_board.fen()
+    return get_analysis(position.fen, position.move, after_fen, position.is_white_move)
+
 
 if __name__ == "__main__":
     print(argon2.hash("password"))
