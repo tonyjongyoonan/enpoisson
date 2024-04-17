@@ -17,13 +17,19 @@ app.add_middleware(
 )
 
 supported_configs = [(1500, chess.WHITE), (1500, chess.BLACK)]
+
+
+def config_to_str(config: tuple[int, bool]) -> str:
+    elo, is_white = config
+    return f"{'white' if is_white else 'black'}-{elo}"
+
+
 model_paths = {
-    (1500, chess.WHITE): "multimodalmodel-white-1500.pth",
-    (1500, chess.BLACK): "multimodalmodel-black-1500.pth",
+    elo_bw: f"multimodalmodel-{config_to_str(elo_bw)}.pth"
+    for elo_bw in supported_configs
 }
 vocab_paths = {
-    (1500, chess.WHITE): "vocab-white-1500.pkl",
-    (1500, chess.BLACK): "vocab-black-1500.pkl",
+    elo_bw: f"vocab-{config_to_str(elo_bw)}.pkl" for elo_bw in supported_configs
 }
 chess_engines: dict[tuple[elo_type, bool], ChessEngine] = {
     elo_bw: ChessEngine(model_paths[elo_bw], vocab_paths[elo_bw])
