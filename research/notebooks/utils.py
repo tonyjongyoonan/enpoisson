@@ -8,6 +8,7 @@ import numpy as np
 import dask.dataframe as dd 
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
+from multiprocessing import Pool
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -232,7 +233,7 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
             # Create a move object from the coordinate notation
             move_obj = chess.Move.from_uci(move)
             # There are some broken moves in the data -> stop reading if so
-            if algebraic_notation and move_obj not in chess_board.legal_moves:
+            if move_obj not in chess_board.legal_moves:
                 break
             else:
                 if algebraic_notation:
@@ -265,11 +266,220 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
                 next_moves.append(label)
     return subsequences, fens, board_states, next_moves, vocab
 
+def df_to_data_black(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, algebraic_notation=True, vocab = None):
+    """
+    Input: Dataframe of training data in which each row represents a full game played between players
+    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
+    """
+    vocab = vocab
+    board_states, fens, subsequences, next_moves = [], [], [], []
+    if vocab is None:
+        vocab = VocabularyWithCLS()
+    chess_board = chess.Board()
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        boards = game_board.split("*")
+        # Encode the moves into SAN notation and then into corresponding indices
+        encoded_moves = [1]
+        for move in moves:
+            # Create a move object from the coordinate notation
+            move_obj = chess.Move.from_uci(move)
+            # There are some broken moves in the data -> stop reading if so
+            if move_obj not in chess_board.legal_moves:
+                break
+            else:
+                if algebraic_notation:
+                    algebraic_move = chess_board.san(move_obj)
+                    chess_board.push(move_obj)
+                    vocab.add_move(algebraic_move)
+                    encoded_move = vocab.get_id(algebraic_move)
+                    encoded_moves.append(encoded_move)
+                else:
+                    vocab.add_move(move)
+                    encoded_move = vocab.get_id(move)
+                    encoded_moves.append(encoded_move)
+        chess_board.reset()
+        # at this point, encoded moves is [1,2,23,5,...]
+        boards = boards[: len(encoded_moves)-1]
+        # Now generate X,Y with sampling
+        for i in range(0,len(encoded_moves)-1):
+            # TODO: Figure out how to deal with black orientation 'seeing' a different board
+            if random.uniform(0, 1) <= sampling_rate and "b" in boards[i]:
+                # Board
+                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
+                fens.append(boards[i])
+                # Sequence of Moves
+                subseq = encoded_moves[0 : i + 1]
+                if fixed_window and len(subseq) > fixed_window_size:
+                    subseq = subseq[-fixed_window_size:]
+                subsequences.append(subseq)
+                # Label
+                label = encoded_moves[i+1]
+                next_moves.append(label)
+    return subsequences, fens, board_states, next_moves, vocab
+
+
+def df_to_data_fen_only(df, fixed_window=False, fixed_window_size=8, sampling_rate=1, algebraic_notation=True, vocab = None):
+    """
+    Converts a dataframe of chess games into a dataset for a transformer model.
+    Each item in the output list represents the history of a game up to a particular move,
+    followed by the CLS token, with moves and FENs separated by special tokens.
+    """
+    if vocab is None:
+        vocab = VocabularyForTransformer()
+    vocab.add_move(' ')
+    subsequences, next_moves = [], []
+    chess_board = chess.Board()
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        boards = game_board.split("*")
+        sequence = [1]
+        for move, board in zip(moves, boards):
+            move_obj = chess.Move.from_uci(move)
+            if move_obj not in chess_board.legal_moves:
+                break
+            algebraic_move = chess_board.san(move_obj) if algebraic_notation else move
+            chess_board.push(move_obj)
+            for char in algebraic_move:
+                vocab.add_move(char)
+            # Add to vocabulary and sequence
+            expanded_fen = expand_fen(board.strip())
+            for char in expanded_fen:
+                vocab.add_move(char)
+            sequence.extend([vocab.get_id("<BOARD>")])
+            sequence.extend([vocab.get_id(char) for char in expanded_fen])
+            sequence.extend([vocab.get_id("<MOVE>")])
+            sequence.extend([vocab.get_id(char) for char in algebraic_move])
+            sequence.extend([vocab.get_id("<SEP>")])
+        boards = boards[: len(sequence)-1]
+        chess_board.reset()
+        move_indices = [i for i, token in enumerate(sequence) if token == vocab.get_id('<MOVE>')]
+        sep_indices = [i for i, token in enumerate(sequence) if token == vocab.get_id('<SEP>')]
+        assert(len(move_indices) == len(sep_indices))
+
+        # Iterate through the game-sequence to create sub-subsequences
+        for i in range(len(move_indices)):
+            # Check if sampling this subsequence based on the sampling rate
+            if random.uniform(0, 1) <= sampling_rate:
+                # Sequence
+                if fixed_window and i > fixed_window_size:
+                    subsequence = sequence[sep_indices[i-fixed_window_size]:move_indices[i]+1]
+                else:
+                    subsequence = sequence[:move_indices[i]+1]
+                subsequences.append(subsequence)
+                # Label
+                label = sequence[move_indices[i]+1:sep_indices[i]]
+                next_moves.append(label)
+            
+    return subsequences, next_moves, vocab
+
+def df_to_data_fen_only_padded(df, fixed_window=False, fixed_window_size=8, sampling_rate=1, algebraic_notation=True, vocab=None):
+    if vocab is None:
+        vocab = VocabularyForTransformer()
+    vocab.add_move(' ')
+    subsequences, next_moves, seq_lengths = [],[],[]
+    chess_board = chess.Board()
+    
+    # Constants for padding
+    SUBSEQUENCE_PAD_LENGTH = 750
+    LABEL_PAD_LENGTH = 7
+    pad_id = vocab.get_id('<PAD>')  # Assuming you have a PAD token in your vocabulary
+
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        boards = game_board.split("*")
+        sequence = [1]  # Starting token, adjust as necessary
+        for move, board in zip(moves, boards):
+            move_obj = chess.Move.from_uci(move)
+            if move_obj not in chess_board.legal_moves:
+                break
+            algebraic_move = chess_board.san(move_obj) if algebraic_notation else move
+            chess_board.push(move_obj)
+            # Process the algebraic move and board for vocabulary
+            temp1, temp2 = [],[]
+            for char in algebraic_move:
+                vocab.add_move(char)
+                temp1.append(char)
+            expanded_fen = expand_fen(board.strip())
+            for char in expanded_fen:
+                vocab.add_move(char)
+                temp2.append(char)
+            # Append tokens to sequence
+            sequence.extend([
+                vocab.get_id("<BOARD>"),
+                *temp2,
+                vocab.get_id("<MOVE>"),
+                *temp1,
+                vocab.get_id("<SEP>")
+            ])
+        
+        chess_board.reset()
+
+        move_indices = [i for i, token in enumerate(sequence) if token == vocab.get_id('<MOVE>')]
+        sep_indices = [i for i, token in enumerate(sequence) if token == vocab.get_id('<SEP>')]
+
+        for i, (move_index, sep_index) in enumerate(zip(move_indices, sep_indices)):
+            if random.uniform(0, 1) <= sampling_rate:
+                start_index = sep_indices[i - fixed_window_size] if fixed_window and i >= fixed_window_size else 0
+                subsequence = sequence[start_index:move_index + 1]
+                label = sequence[move_index + 1:sep_index]
+                
+                # Pad subsequence and label
+                subsequence += [pad_id] * (SUBSEQUENCE_PAD_LENGTH - len(subsequence))
+                label += [pad_id] * (LABEL_PAD_LENGTH - len(label))
+                
+                assert len(subsequence) == SUBSEQUENCE_PAD_LENGTH, f"Subsequence length is {len(subsequence)}, expected {SUBSEQUENCE_PAD_LENGTH}"
+                if len(label) != LABEL_PAD_LENGTH:
+                    print([vocab.get_word(i) for i in label])
+                assert len(label) == LABEL_PAD_LENGTH, f"Label length is {len(label)}, expected {LABEL_PAD_LENGTH}"
+
+                seq_lengths.append(len(subsequence))
+                subsequences.append(subsequence)
+                next_moves.append(label)  # Ensure label is exactly 7 tokens long
+
+    return subsequences, next_moves, seq_lengths, vocab
+
+
 # Function to calculate top-3 accuracy
 def top_3_accuracy(y_true, y_pred):
     top3 = torch.topk(y_pred, 3, dim=1).indices
     correct = top3.eq(y_true.view(-1, 1).expand_as(top3))
     return correct.any(dim=1).float().mean().item()
+
+def expand_fen(fen):
+    """
+    Expands a FEN string into a fixed-length format by expanding the shorthand notations.
+    
+    Args:
+        fen (str): The FEN string representing a chess position.
+    
+    Returns:
+        str: The expanded FEN string with a fixed length for the board representation.
+    """
+    # Split the FEN string into its main components
+    parts = fen.split(' ')
+    board, side_to_move, castling, en_passant, halfmove_clock, fullmove_number = parts
+    
+    # Expand the board shorthand notations
+    expanded_board = ''
+    rows = board.split('/')
+    for row in rows:
+        expanded_row = ''
+        for char in row:
+            if char.isdigit():
+                # Replace a digit with that many placeholders ('1' becomes ' ')
+                expanded_row += '*' * int(char)
+            else:
+                expanded_row += char
+        expanded_board += expanded_row + '/'
+    
+    # Remove the trailing slash from the expanded board representation
+    expanded_board = expanded_board.rstrip('/')
+    
+    # Reassemble the FEN string with the expanded board
+    expanded_fen = ' '.join([expanded_board, side_to_move, castling, en_passant, halfmove_clock, fullmove_number])
+    
+    return expanded_fen
 
 
 # Function to pad move sequences & get their sequence lengths
@@ -325,7 +535,25 @@ class VocabularyWithCLS:
 
     def get_move(self, id):
         return self.id_to_move.get(id, self.id_to_move[0])
-    
+
+class VocabularyForTransformer:
+    def __init__(self):
+        self.word_to_id = {"<PAD>": 0, "<START>": 1, "<BOARD>": 2, "<MOVE>": 3, "<SEP>": 4, "<CLS>": 5}
+        self.id_to_word = {0: "<PAD>", 1: "<START>", 2: "<BOARD>", 3: "<MOVE>", 4: "<SEP>", 5: "<CLS>"}
+        self.num_words = 5
+
+    def add_move(self, word):
+        if word not in self.word_to_id:
+            self.word_to_id[word] = self.num_words
+            self.id_to_word[self.num_words] = word
+            self.num_words += 1
+
+    def get_id(self, word):
+        return self.word_to_id.get(word, None)
+
+    def get_word(self, word_id):
+        return self.id_to_word.get(word_id, None)
+        
 class ChessDataset(Dataset):
     def __init__(self, X, Y):
         self.X = X

@@ -131,6 +131,7 @@ dist
 .pnp.*
 
 # Large Files
+research/data/transformer/*.memmap
 lichess_db_standard_rated_2019-01.csv
 haha_longer.csv
 haha_longer_1500.csv
@@ -142,4 +143,6 @@ haha-longer*
 research/data/jan-march/*.memmap
 research/data/combined/*.memmap
 research/data/apr-jun
+research/data/*.csv
 haha-longer*
+research/data/
