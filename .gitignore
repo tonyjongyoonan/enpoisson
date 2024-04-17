@@ -145,4 +145,5 @@ research/data/combined/*.memmap
 research/data/apr-jun
 research/data/*.csv
 haha-longer*
-research/data/
+research/data/black-data/jan/*.memmap
+research/data/black-data/jan/*.csv
