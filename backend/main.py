@@ -15,6 +15,8 @@ app.add_middleware(
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
 )
+
+supported_configs = [(1500, chess.WHITE), (1500, chess.BLACK)]
 model_paths = {
     (1500, chess.WHITE): "multimodalmodel-white-1500.pth",
     (1500, chess.BLACK): "multimodalmodel-black-1500.pth",
@@ -24,8 +26,8 @@ vocab_paths = {
     (1500, chess.BLACK): "vocab-black-1500.pkl",
 }
 chess_engines: dict[tuple[elo_type, bool], ChessEngine] = {
-    elo_bw: ChessEngine(model_path, vocab_paths[elo_bw])
-    for elo_bw, model_path in model_paths.items()
+    elo_bw: ChessEngine(model_paths[elo_bw], vocab_paths[elo_bw])
+    for elo_bw in supported_configs
 }
 
 
