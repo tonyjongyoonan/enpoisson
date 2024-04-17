@@ -6,12 +6,12 @@ from nn_models import *
 from utils import fen_to_array_two, is_legal_move
 from typing import List
 
-vocab_path = "vocab.pkl"
+vocab_path = "vocab-white-1500.pkl"
 model_path = "multimodalmodel-exp-12.pth"
 
 
 class ChessEngine:
-    def __init__(self, model_path):
+    def __init__(self, model_path, vocab_path):
         self.device = torch.device("cpu")
         with open(vocab_path, "rb") as inp:
             self.vocab = pickle.load(inp)
@@ -120,6 +120,6 @@ if __name__ == "__main__":
         "Nxe4",
         "dxe4",
     ]
-    engine = ChessEngine(model_path)
+    engine = ChessEngine(model_path, vocab_path)
     print("model loaded")
     print(engine.get_human_move(sample_fen, sample_last_16_moves, top_k=3))
