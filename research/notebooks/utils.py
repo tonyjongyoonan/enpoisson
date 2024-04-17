@@ -399,11 +399,11 @@ def df_to_data_fen_only_padded(df, fixed_window=False, fixed_window_size=8, samp
             temp1, temp2 = [],[]
             for char in algebraic_move:
                 vocab.add_move(char)
-                temp1.append(char)
+                temp1.append(vocab.get_id(char))
             expanded_fen = expand_fen(board.strip())
             for char in expanded_fen:
                 vocab.add_move(char)
-                temp2.append(char)
+                temp2.append(vocab.get_id(char))
             # Append tokens to sequence
             sequence.extend([
                 vocab.get_id("<BOARD>"),
