@@ -24,8 +24,8 @@ vocab_paths = {
     (1500, chess.BLACK): "vocab-black-1500.pkl",
 }
 chess_engines: dict[tuple[elo_type, bool], ChessEngine] = {
-    elo_bw: ChessEngine(model_paths[elo_bw], vocab_paths[elo_bw])
-    for elo_bw in model_paths
+    elo_bw: ChessEngine(model_path, vocab_paths[elo_bw])
+    for elo_bw, model_path in model_paths.items()
 }
 
 
