@@ -147,3 +147,5 @@ research/data/*.csv
 haha-longer*
 research/data/black-data/jan/*.memmap
 research/data/black-data/jan/*.csv
+research/data/transformer/jan/*.memmap
+research/data/transformer/jan/*.csv
