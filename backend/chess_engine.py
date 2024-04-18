@@ -33,7 +33,7 @@ class ChessEngine:
     ):
         """
         Finds the top_k legal moves. Uses short-circuit evaluation so it is faster
-        than filtering the whole set of possitive moves.
+        than filtering the whole set of possible moves.
         """
         chess_board = chess.Board(fen)
         output_moves = []
