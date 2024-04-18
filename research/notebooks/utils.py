@@ -379,7 +379,7 @@ def df_to_data(df, fixed_window=False, fixed_window_size=16, sampling_rate=1, al
                     encoded_moves.append(encoded_move)
         chess_board.reset()
         # at this point, encoded moves is [1,2,23,5,...]
-        boards = boards[: len(encoded_moves)-1]
+        # boards = boards[: len(encoded_moves)-1]
         # Now generate X,Y with sampling
         for i in range(0,len(encoded_moves)-1):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
@@ -431,9 +431,9 @@ def df_to_data_black(df, fixed_window=False, fixed_window_size=16, sampling_rate
                     encoded_moves.append(encoded_move)
         chess_board.reset()
         # at this point, encoded moves is [1,2,23,5,...]
-        boards = boards[: len(encoded_moves)-1]
+        # boards = boards[: len(encoded_moves)-1]
         # Now generate X,Y with sampling
-        for i in range(0,len(encoded_moves)-1):
+        for i in range(len(encoded_moves)-1):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
             if random.uniform(0, 1) <= sampling_rate and "b" in boards[i].split(" ")[1]:
                 # Board
