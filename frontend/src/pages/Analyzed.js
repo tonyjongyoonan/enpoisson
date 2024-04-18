@@ -84,7 +84,7 @@ const Analyzed = () => {
         body: JSON.stringify({
           fen: chess.current.fen(),
           move: selected.value === 'game' ? moves[index] : recMove,
-          is_white_move: moves.length % 2 === 1,
+          is_white_move: chess.current.history().length % 2 === 0,
         })
       });
       const data = await response.json();

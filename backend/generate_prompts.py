@@ -225,10 +225,14 @@ def generate_prompt(start_board, move, end_board, turn):
     prompt += ". Distance between Black king and the closest Black pawn at end state: " + str(end_black_king_pawn_distance)
     prompt += ". Number of White pieces hanging at start state: " + str(start_white_hanging) 
     prompt += ". Number of White pieces hanging at end state: " + str(end_white_hanging) 
+    prompt += ". Change in number of White pieces hanging as a result of this move: " + str(end_white_hanging - start_white_hanging)
     prompt += ". Number of Black pieces hanging at start state: " + str(start_black_hanging) 
     prompt += ". Number of Black pieces hanging at end state: " + str(end_black_hanging) 
+    prompt += ". Change in number of Black pieces hanging as a result of this move: " + str(end_black_hanging - start_black_hanging)
     prompt += "\n\n"
-    prompt += "Don't yap. Give me 3-5 sentences of analysis. You can use your own understanding of chess to supplement your analysis."
+    prompt += "Don't yap. Give me 1-2 sentences of analysis without using semicolons. You can use your own understanding of chess to supplement your analysis."
+    prompt += "Don't use any specific numbers in your response, and only reference the three heuristics most impacted."
+    prompt += "Give me a good response or I'll die."
 
     return prompt
 
