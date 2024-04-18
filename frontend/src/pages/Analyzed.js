@@ -7,9 +7,12 @@ import AnalysisMoves from './AnalysisMoves';
 import Bar from '../components/Bar';
 import './Analyzed.css';
 
+
 const options = [
   { value: 'game', label: 'Played move'}, 
-  { value: '1500', label: '1500 ELO most human move'}
+  { value: '1100', label: '1100 ELO most human move'},
+  { value: '1500', label: '1500 ELO most human move'},
+  { value: '1900', label: '1900 ELO most human move'}
 ]
 
 const difficulty = [0, 3, 4, 3, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 2, 6, 9, 10, 11, 23, 11, 35, 13, 46, 23, 14, 56, 13, 60, 80, 73, 70, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14]
@@ -92,7 +95,7 @@ const Analyzed = () => {
     }
   }
 
-  const getEngineMove = async () => {
+  const getEngineMove = async (elo) => {
     const no_moves = chess.current.history().length;
     try {
       const response = await fetch("http://localhost:8000/get-human-move", {
@@ -103,7 +106,8 @@ const Analyzed = () => {
         body: JSON.stringify({
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
-          is_white_move: moves.length % 2 !== 1 // if odd number of moves, then return false (black) since we want model to give black move
+          is_white_move: chess.current.history().length % 2 !== 1, // if odd number of moves, then return false (black) since we want model to give black move
+          elo: elo,
         })
       });
       const data = await response.json();
@@ -171,9 +175,10 @@ const Analyzed = () => {
     setRecMove("");
     setFeedback("");
     if (selected.value !== 'game') {
-      getEngineMove();
+      getEngineMove(Number(selected.value));
     }
-  }, [index])
+  }, [index, selected])
+
 
   useEffect(() => {
     if (index >= moves.length) {
@@ -195,6 +200,8 @@ const Analyzed = () => {
           setArrows([[move_info["from"], move_info["to"]]])
           chess.current.undo();
         } catch (error) {
+          console.log("illegal move occurred");
+          console.log(recMove);
           setRecMove("");
         }
         setRecMove(moves[index]);
@@ -222,7 +229,10 @@ const Analyzed = () => {
         </div>
         <div className="analysis-explanation-container">
           <div className="explanation-selector-container">
-            <Select className="analysis-select" value={selected} onChange={handleChange} options={options} />
+            { chess.current.history().length > 0 ? 
+              <Select className="analysis-select" value={selected} onChange={handleChange} options={options} /> :
+              <Select className="analysis-select" value={selected} onChange={handleChange} options={[{ value: 'game', label: 'Played move '}]} />
+            }
             { selected.value !== "game" ? 
               <p>{ chess.current.isCheckmate() ? "Checkmate!" : "Most likely move: " + recMove } </p> :
               <p>{ index < moves.length ? "Next played move: " + moves[index] : "Game is over!" }</p>
