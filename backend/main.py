@@ -93,9 +93,10 @@ def get_difficulty(position: Difficulty):
     # take the probability of bad moves and sum them.
     stockfish.set_fen_position(position.fen)
     chess_board = chess.Board(position.fen)
+    # each move is a dictionary with keys "Move", "Centipawn", "Mate"
     stockfish_top_5 = stockfish.get_top_moves(5)
     moves_uci = [move["Move"] for move in stockfish_top_5]
-    evals = [int(move["Centipawn"]) / 100 for move in stockfish_top_5]
+    evals = [int(move["Centipawn"]) / 100.0 for move in stockfish_top_5]
     moves_san = [chess_board.san(chess.Move.from_uci(move)) for move in moves_uci]
     engine = chess_engines[(position.elo, position.is_white_move)]
     probabilities = [
