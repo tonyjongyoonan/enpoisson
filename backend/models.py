@@ -29,6 +29,12 @@ class ChessPosition(BaseModel):
     elo: elo_type
 
 
+class Difficulty(BaseModel):
+    fen: str
+    last_16_moves: Annotated[list[str], MaxLen(16)]
+    is_white_move: bool
+
+
 class ChessExplanation(BaseModel):
     fen: str
     move: str
