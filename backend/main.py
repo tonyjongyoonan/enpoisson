@@ -6,6 +6,8 @@ from chess_engine import ChessEngine
 from generate_prompts import get_analysis
 import chess
 import database
+from stockfish import Stockfish
+import numpy as np
 
 app = FastAPI()
 app.add_middleware(
@@ -17,6 +19,8 @@ app.add_middleware(
 )
 
 supported_configs = [(1500, chess.WHITE), (1500, chess.BLACK)]
+
+stockfish = Stockfish("../stockfish", depth=20)
 
 
 def config_to_str(config: tuple[int, bool]) -> str:
@@ -87,7 +91,17 @@ def get_human_move(position: ChessPosition):
 def get_difficulty(position: ChessPosition):
     # at a high level: of the top 5 human moves, how many of them are blunders/good moves?
     # take the probability of bad moves and sum them.
-    pass
+    stockfish.set_fen_position(position.fen)
+    x = stockfish.get_top_moves(5)
+    position.top_k = 5
+    
+    # using x get the corresponding probabilities
+    probabilities = [0, 0, 0, 0, 0]
+    scaled_x = x / 0.9
+    result = 1 / (1 + np.exp(-scaled_x))
+    sum_x = np.sum(result)
+    normalized_result = result / sum_x
+    return np.dot(normalized_result, probabilities)
 
 
 # x: a numpy array of top 5 stockfish evaluations
