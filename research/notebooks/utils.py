@@ -1,18 +1,149 @@
 import torch
 import matplotlib.pyplot as plt
-from torch.utils.data import Dataset
 import chess
 import torch.nn as nn
+import numpy as np
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+import torch
+import chess
 import random
 import numpy as np
 import dask.dataframe as dd 
-from pytorch_grad_cam import GradCAM
-from pytorch_grad_cam.utils.image import show_cam_on_image
-from multiprocessing import Pool
+from torch.utils.data import Dataset
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+""" Objects """
+        
+class ChessDataset(Dataset):
+    def __init__(self, X, Y):
+        self.X = X
+        self.Y = Y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        features, label = self.X[idx], self.Y[idx]
+
+        return torch.tensor(features, dtype=torch.float32), torch.tensor(
+            label, dtype=torch.long
+        )
+
+class MultimodalDataset(Dataset):
+    def __init__(self, sequences, boards, lengths, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
+class MultimodalDatasetWithFEN(Dataset):
+    def __init__(self, sequences, boards, lengths, fens, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+        self.fens = fens
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            self.fens[idx],
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
+    
+class MultimodalTwoDataset(Dataset):
+    def __init__(self, sequences, boards, lengths, labels):
+        self.sequences = sequences
+        self.boards = boards
+        self.lengths = lengths
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.float32),
+            torch.tensor(self.sequences[idx], dtype=torch.long),
+            torch.tensor(self.lengths[idx], dtype=torch.long),
+            torch.tensor(self.labels[idx], dtype=torch.long),
+        )
+
+""" This vocabulary is simply to turn the labels (predicted move) into integers which PyTorch Models can understand"""
+
+class Vocabulary:
+    def __init__(self):
+        self.move_to_id = {"<UNK>": 0}
+        self.id_to_move = {0: "<UNK>"}
+        self.index = 1  # Start indexing from 1
+
+    def add_move(self, move):
+        if move not in self.move_to_id:
+            self.move_to_id[move] = self.index
+            self.id_to_move[self.index] = move
+            self.index += 1
+
+    def get_id(self, move):
+        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
+
+    def get_move(self, id):
+        return self.id_to_move.get(id, self.id_to_move[0])
+
+class VocabularyWithCLS:
+    def __init__(self):
+        self.move_to_id = {"<UNK>": 0, "CLS": 1}
+        self.id_to_move = {0: "<UNK>", 1: "CLS"}
+        self.index = 2  # Start indexing from 2
+
+    def add_move(self, move):
+        if move not in self.move_to_id:
+            self.move_to_id[move] = self.index
+            self.id_to_move[self.index] = move
+            self.index += 1
+
+    def get_id(self, move):
+        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
+
+    def get_move(self, id):
+        return self.id_to_move.get(id, self.id_to_move[0])
+
+class VocabularyForTransformer:
+    def __init__(self):
+        self.word_to_id = {"<PAD>": 0, "<START>": 1, "<BOARD>": 2, "<MOVE>": 3, "<SEP>": 4, "<CLS>": 5}
+        self.id_to_word = {0: "<PAD>", 1: "<START>", 2: "<BOARD>", 3: "<MOVE>", 4: "<SEP>", 5: "<CLS>"}
+        self.num_words = 5
+
+    def add_move(self, word):
+        if word not in self.word_to_id:
+            self.word_to_id[word] = self.num_words
+            self.id_to_word[self.num_words] = word
+            self.num_words += 1
+
+    def get_id(self, word):
+        return self.word_to_id.get(word, None)
+
+    def get_word(self, word_id):
+        return self.id_to_word.get(word_id, None)
+    
 """ Data Processing """
+
 def process_raw_csv(filepath):
     # Import CSV File (from Maia: http://csslab.cs.toronto.edu/datasets/#monthly_chess_csv)
     # The CSV has 151,072,060 rows
@@ -304,7 +435,7 @@ def df_to_data_black(df, fixed_window=False, fixed_window_size=16, sampling_rate
         # Now generate X,Y with sampling
         for i in range(0,len(encoded_moves)-1):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate and "b" in boards[i]:
+            if random.uniform(0, 1) <= sampling_rate and "b" in boards[i].split(" ")[1]:
                 # Board
                 board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
                 fens.append(boards[i])
@@ -368,7 +499,7 @@ def df_to_data_fen_only(df, fixed_window=False, fixed_window_size=8, sampling_ra
                     subsequence = sequence[:move_indices[i]+1]
                 subsequences.append(subsequence)
                 # Label
-                label = sequence[move_indices[i]+1:sep_indices[i]]
+                label = sequence[move_indices[i]+1:sep_indices[i]+1]
                 next_moves.append(label)
             
     return subsequences, next_moves, vocab
@@ -377,7 +508,7 @@ def df_to_data_fen_only_padded(df, fixed_window=False, fixed_window_size=8, samp
     if vocab is None:
         vocab = VocabularyForTransformer()
     vocab.add_move(' ')
-    subsequences, next_moves, seq_lengths = [],[],[]
+    subsequences, next_moves = [],[]
     chess_board = chess.Board()
     
     # Constants for padding
@@ -433,11 +564,10 @@ def df_to_data_fen_only_padded(df, fixed_window=False, fixed_window_size=8, samp
                     print([vocab.get_word(i) for i in label])
                 assert len(label) == LABEL_PAD_LENGTH, f"Label length is {len(label)}, expected {LABEL_PAD_LENGTH}"
 
-                seq_lengths.append(len(subsequence))
                 subsequences.append(subsequence)
                 next_moves.append(label)  # Ensure label is exactly 7 tokens long
 
-    return subsequences, next_moves, seq_lengths, vocab
+    return subsequences, next_moves, vocab
 
 
 # Function to calculate top-3 accuracy
@@ -493,136 +623,6 @@ def pad_sequences(sequences, max_len=None, pad_id=0):
         padded_sequences[i, :length] = seq[:length]
         sequence_lengths[i] = length
     return padded_sequences, sequence_lengths
-
-""" Objects """
-
-
-""" This vocabulary is simply to turn the labels (predicted move) into integers which PyTorch Models can understand"""
-
-
-class Vocabulary:
-    def __init__(self):
-        self.move_to_id = {"<UNK>": 0}
-        self.id_to_move = {0: "<UNK>"}
-        self.index = 1  # Start indexing from 1
-
-    def add_move(self, move):
-        if move not in self.move_to_id:
-            self.move_to_id[move] = self.index
-            self.id_to_move[self.index] = move
-            self.index += 1
-
-    def get_id(self, move):
-        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
-
-    def get_move(self, id):
-        return self.id_to_move.get(id, self.id_to_move[0])
-
-class VocabularyWithCLS:
-    def __init__(self):
-        self.move_to_id = {"<UNK>": 0, "CLS": 1}
-        self.id_to_move = {0: "<UNK>", 1: "CLS"}
-        self.index = 2  # Start indexing from 2
-
-    def add_move(self, move):
-        if move not in self.move_to_id:
-            self.move_to_id[move] = self.index
-            self.id_to_move[self.index] = move
-            self.index += 1
-
-    def get_id(self, move):
-        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
-
-    def get_move(self, id):
-        return self.id_to_move.get(id, self.id_to_move[0])
-
-class VocabularyForTransformer:
-    def __init__(self):
-        self.word_to_id = {"<PAD>": 0, "<START>": 1, "<BOARD>": 2, "<MOVE>": 3, "<SEP>": 4, "<CLS>": 5}
-        self.id_to_word = {0: "<PAD>", 1: "<START>", 2: "<BOARD>", 3: "<MOVE>", 4: "<SEP>", 5: "<CLS>"}
-        self.num_words = 5
-
-    def add_move(self, word):
-        if word not in self.word_to_id:
-            self.word_to_id[word] = self.num_words
-            self.id_to_word[self.num_words] = word
-            self.num_words += 1
-
-    def get_id(self, word):
-        return self.word_to_id.get(word, None)
-
-    def get_word(self, word_id):
-        return self.id_to_word.get(word_id, None)
-        
-class ChessDataset(Dataset):
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        features, label = self.X[idx], self.Y[idx]
-
-        return torch.tensor(features, dtype=torch.float32), torch.tensor(
-            label, dtype=torch.long
-        )
-
-class MultimodalDataset(Dataset):
-    def __init__(self, sequences, boards, lengths, labels):
-        self.sequences = sequences
-        self.boards = boards
-        self.lengths = lengths
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx):
-        return (
-            torch.tensor(self.boards[idx], dtype=torch.float32),
-            torch.tensor(self.sequences[idx], dtype=torch.long),
-            torch.tensor(self.lengths[idx], dtype=torch.long),
-            torch.tensor(self.labels[idx], dtype=torch.long),
-        )
-class MultimodalDatasetWithFEN(Dataset):
-    def __init__(self, sequences, boards, lengths, fens, labels):
-        self.sequences = sequences
-        self.boards = boards
-        self.lengths = lengths
-        self.labels = labels
-        self.fens = fens
-
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx):
-        return (
-            torch.tensor(self.boards[idx], dtype=torch.float32),
-            torch.tensor(self.sequences[idx], dtype=torch.long),
-            torch.tensor(self.lengths[idx], dtype=torch.long),
-            self.fens[idx],
-            torch.tensor(self.labels[idx], dtype=torch.long),
-        )
-    
-class MultimodalTwoDataset(Dataset):
-    def __init__(self, sequences, boards, lengths, labels):
-        self.sequences = sequences
-        self.boards = boards
-        self.lengths = lengths
-        self.labels = labels
-
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx):
-        return (
-            torch.tensor(self.boards[idx], dtype=torch.float32),
-            torch.tensor(self.sequences[idx], dtype=torch.long),
-            torch.tensor(self.lengths[idx], dtype=torch.long),
-            torch.tensor(self.labels[idx], dtype=torch.long),
-        )
 
 """ Analysis """
 def is_legal_move(chess_board, move_san):
