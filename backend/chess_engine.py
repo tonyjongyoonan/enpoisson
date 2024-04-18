@@ -7,7 +7,7 @@ from utils import fen_to_array_two, is_legal_move
 from typing import List
 
 vocab_path = "vocab-white-1500.pkl"
-model_path = "multimodalmodel-exp-12.pth"
+model_path = "multimodalmodel-white-1500.pth"
 
 
 class ChessEngine:
