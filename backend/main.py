@@ -88,30 +88,29 @@ def get_human_move(position: ChessPosition):
 
 
 @app.post("/get-difficulty")
-def get_difficulty(position: ChessPosition):
+def get_difficulty(position: Difficulty):
     # at a high level: of the top 5 human moves, how many of them are blunders/good moves?
     # take the probability of bad moves and sum them.
     stockfish.set_fen_position(position.fen)
+    chess_board = chess.Board(position.fen)
     x = stockfish.get_top_moves(5)
-    position.top_k = 5
-    
-    # using x get the corresponding probabilities
-    probabilities = [0, 0, 0, 0, 0]
-    scaled_x = x / 0.9
-    result = 1 / (1 + np.exp(-scaled_x))
+    moves_uci = []
+    evals = []
+    for move in x:
+        moves_uci.append(move["Move"])
+        evals.append(int(move["Centipawn"]) / 100)
+    moves_san = [chess_board.san(chess.Move.from_uci(move)) for move in moves_uci]
+    engine = chess_engines[(position.elo, position.is_white_move)]
+    probabilities = [
+        engine.get_probability_of_move(position.fen, position.last_16_moves, move)
+        for move in moves_san
+    ]
+    probabilities_zeroed = np.array([x if x is not None else 0 for x in probabilities])
+    scaled_evals = np.array(evals) / 0.9
+    result = 1 / (1 + np.exp(-scaled_evals))
     sum_x = np.sum(result)
     normalized_result = result / sum_x
-    return np.dot(normalized_result, probabilities)
-
-
-# x: a numpy array of top 5 stockfish evaluations
-# probabilities: a numpy array of probabilities of playing each move
-# def get_difficulty(x, probabilities):
-#     scaled_x = x/0.9
-#     result = 1 / (1 + np.exp(-scaled_x))
-#     sum_x = np.sum(result)
-#     normalized_result = result / sum_x
-#     return np.dot(normalized_result, probabilities)
+    return np.dot(normalized_result, probabilities_zeroed)
 
 
 @app.post("/get-explanation")
@@ -123,10 +122,20 @@ def get_explanation(position: ChessExplanation):
 
 
 if __name__ == "__main__":
-    print(argon2.hash("password"))
+    # print(argon2.hash("password"))
+    # print(
+    #     argon2.verify(
+    #         "password",
+    #         "$argon2id$v=19$m=65536,t=3,p=4$HUPI2VuLEWKMcW6tVaq1Fg$B1F198SSajgfutyAVl75E0iOYrtB7WTsWpt69A6WnY4",
+    #     )
+    # )
     print(
-        argon2.verify(
-            "password",
-            "$argon2id$v=19$m=65536,t=3,p=4$HUPI2VuLEWKMcW6tVaq1Fg$B1F198SSajgfutyAVl75E0iOYrtB7WTsWpt69A6WnY4",
+        get_difficulty(
+            Difficulty(
+                fen="rnbqkbnr/ppp2pp1/8/3pp2p/4P3/4K3/PPPP1PPP/RNBQ1BNR w kq - 0 4",
+                last_16_moves=["e4", "e5", "Ke2", "h5", "Ke3", "d5"],
+                is_white_move=True,
+                elo=1500,
+            )
         )
     )
