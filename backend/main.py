@@ -19,7 +19,12 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-supported_configs = [(1500, chess.WHITE), (1500, chess.BLACK)]
+supported_configs = [
+    (1500, chess.WHITE),
+    (1500, chess.BLACK),
+    (2100, chess.WHITE),
+    (2100, chess.BLACK),
+]
 
 
 def get_stockfish_path():
