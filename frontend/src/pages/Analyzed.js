@@ -12,7 +12,7 @@ const options = [
   { value: 'game', label: 'Played move'}, 
   { value: '1100', label: '1100 ELO most human move'},
   { value: '1500', label: '1500 ELO most human move'},
-  { value: '1900', label: '1900 ELO most human move'}
+  { value: '2100', label: '2100 ELO most human move'}
 ]
 
 const difficulty = [0, 3, 4, 3, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 2, 6, 9, 10, 11, 23, 11, 35, 13, 46, 23, 14, 56, 13, 60, 80, 73, 70, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14, 65, 34, 12, 8, 4, 5, 13, 14, 23, 15, 23, 16, 14, 41, 23, 12, 17, 13, 14]
@@ -267,7 +267,7 @@ const Analyzed = () => {
       </div>
       <div className="analysis-page-container">
         {/* <Progress.Line showInfo={false} strokeColor={"white"} vertical={true}/> */}
-        <Bar color={"red"} value={Math.min(100, newDifficulty)} label={Math.floor(newDifficulty)}/>
+        <Bar color={"red"} value={100 - Math.min(100, newDifficulty)} label={Math.floor(newDifficulty)}/>
         <Bar color={"black"} value = {stockfish} label = {stockfish_label}/>
         <div className="chessboard-container">
           <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
