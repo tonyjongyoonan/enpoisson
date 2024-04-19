@@ -21,8 +21,25 @@ app.add_middleware(
 
 supported_configs = [(1500, chess.WHITE), (1500, chess.BLACK)]
 
-stockfish_path = f"../stockfish_{platform.system().lower()}"
-stockfish = Stockfish(stockfish_path, depth=18)
+
+def get_stockfish_path():
+    os_type = platform.system().lower()
+    os_arch = platform.machine().lower()
+    os_release = platform.release().lower()
+    if os_type == "linux":
+        if "wsl" in os_release:
+            return "../stockfish_linux_wsl"
+        else:
+            return "../stockfish_linux"
+    elif os_type == "darwin":
+        if "arm" in os_arch:
+            return "../stockfish_mac_arm"
+        else:
+            return "../stockfish_mac_86"
+    raise Exception("Unsupported OS")
+
+
+stockfish = Stockfish(get_stockfish_path(), depth=18)
 
 
 def config_to_str(config: tuple[int, bool]) -> str:
