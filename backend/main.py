@@ -39,7 +39,7 @@ def get_stockfish_path():
     raise Exception("Unsupported OS")
 
 
-stockfish = Stockfish(get_stockfish_path(), depth=18)
+stockfish = Stockfish(get_stockfish_path(), depth=8)
 
 
 def config_to_str(config: tuple[int, bool]) -> str:

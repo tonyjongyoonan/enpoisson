@@ -29,7 +29,7 @@ const Analyzed = () => {
   const [arrows, setArrows] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [recMove, setRecMove] = useState("");
-  const [newDifficulty, setDifficulty] = useState(50);
+  const [newDifficulty, setDifficulty] = useState(0);
 
   const getPgnMoves = (pgn) => {
     const newChess = new Chess();
@@ -86,13 +86,15 @@ const Analyzed = () => {
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
           is_white_move: chess.current.history().length % 2 !== 1, // if odd number of moves, then return false (black) since we want model to give black move
-          elo: 1500,
+          elo: 1500
         })
       });
       const data = await response.json();
-      setDifficulty(data);
+      setDifficulty((data + 5) * 10);
+      console.log(data);
     } catch (error) {
       console.log(error);
+      setDifficulty(0);
     }
   }
 
@@ -177,7 +179,9 @@ const Analyzed = () => {
 
   useEffect(() => {
     console.log("calling now");
-    getDifficultyScore();
+    if (index > 0) {
+      getDifficultyScore();
+    }
   }, [index])
 
   useEffect(() => {
@@ -243,7 +247,7 @@ const Analyzed = () => {
       </div>
       <div className="analysis-page-container">
         {/* <Progress.Line showInfo={false} strokeColor={"white"} vertical={true}/> */}
-        <Bar color={"black"} value={difficulty[index]} label={difficulty[index] < 30 ? "easy" : difficulty[index] < 70 ? "med" : "hard"}/>
+        <Bar color={"black"} value={newDifficulty} label={newDifficulty < 30 ? "easy" : newDifficulty < 70 ? "med" : "hard"}/>
         <div className="chessboard-container">
           <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
         </div>
