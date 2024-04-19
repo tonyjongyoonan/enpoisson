@@ -29,11 +29,11 @@ const Analyzed = () => {
   const [arrows, setArrows] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [recMove, setRecMove] = useState("");
+  const [newDifficulty, setDifficulty] = useState(50);
 
   const getPgnMoves = (pgn) => {
     const newChess = new Chess();
     newChess.loadPgn(pgn);
-    console.log(newChess.history());
     return newChess.history();
   };
 
@@ -74,6 +74,28 @@ const Analyzed = () => {
     setIndex(index + 1);
   }
 
+  const getDifficultyScore = async () => {
+    const no_moves = chess.current.history().length;
+    try {
+      const response = await fetch("http://localhost:8000/get-difficulty", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fen: chess.current.fen(), 
+          last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
+          is_white_move: chess.current.history().length % 2 !== 1, // if odd number of moves, then return false (black) since we want model to give black move
+          elo: 1500,
+        })
+      });
+      const data = await response.json();
+      setDifficulty(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   const getExplanation = async() => {
     try {
       const response = await fetch("http://localhost:8000/get-explanation", {
@@ -84,7 +106,7 @@ const Analyzed = () => {
         body: JSON.stringify({
           fen: chess.current.fen(),
           move: selected.value === 'game' ? moves[index] : recMove,
-          is_white_move: moves.length % 2 === 1,
+          is_white_move: chess.current.history().length % 2 === 0,
         })
       });
       const data = await response.json();
@@ -152,6 +174,11 @@ const Analyzed = () => {
     setRecMove("");
     setIndex(index - 1);
   }
+
+  useEffect(() => {
+    console.log("calling now");
+    getDifficultyScore();
+  }, [index])
 
   useEffect(() => {
     const handleKeydown = (event) => {

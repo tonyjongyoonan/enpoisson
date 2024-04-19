@@ -7,7 +7,7 @@ from utils import fen_to_array_two, is_legal_move
 from typing import List
 
 vocab_path = "vocab-white-1500.pkl"
-model_path = "multimodalmodel-exp-12.pth"
+model_path = "multimodalmodel-white-1500.pth"
 
 
 class ChessEngine:
@@ -33,7 +33,7 @@ class ChessEngine:
     ):
         """
         Finds the top_k legal moves. Uses short-circuit evaluation so it is faster
-        than filtering the whole set of possitive moves.
+        than filtering the whole set of possible moves.
         """
         chess_board = chess.Board(fen)
         output_moves = []
@@ -77,11 +77,14 @@ class ChessEngine:
             0
         ]  # batch of size 1
 
-    def get_human_move(self, fen: str, last_move_sequence: List[str], *, top_k: int):
+    def get_model_output(self, fen: str, last_move_sequence: List[str]):
         """
-        fen: a fen in string format representing the position
-        last_move_sequence: list of last 16 half-moves made
-        top_k: keyword argument, number moves to return
+        Takes in the fen and last_move_sequence and returns the model output,
+        which is a tensor:
+            index {i} stores the probability of move {i},
+            where i is a move in the vocab.
+
+        For example, if vocab.move_to_id["e4"] = 100, then model_output[100] is the probability of "e4"
         """
         fen_board: str = fen.split()[0]
         board = fen_to_array_two(fen_board)
@@ -93,7 +96,15 @@ class ChessEngine:
             model_output = self.call_model(
                 board, last_move_sequence_ids, sequence_length
             )
-        # add difficulty bar here
+        return model_output
+
+    def get_human_move(self, fen: str, last_move_sequence: List[str], *, top_k: int):
+        """
+        fen: a fen in string format representing the position
+        last_move_sequence: list of last 16 half-moves made
+        top_k: keyword argument, number moves to return
+        """
+        model_output = self.get_model_output(fen, last_move_sequence)
         _, sorted_move_indices = torch.sort(model_output, descending=True)
         # each index contains the probability of the move representing that index
         model_output_decimal = torch.softmax(model_output, dim=0)
@@ -102,6 +113,20 @@ class ChessEngine:
             move: model_output_decimal[self.vocab.move_to_id[move]].item()
             for move in top_k_moves
         }
+
+    def get_probability_of_move(
+        self, fen: str, last_move_sequence: List[str], move: str
+    ):
+        """
+        fen: a fen in string format representing the position
+        last_move_sequence: list of last 16 half-moves made
+        move: the move to get the probability of
+        """
+        model_output = self.get_model_output(fen, last_move_sequence)
+        model_output_decimal = torch.softmax(model_output, dim=0)
+        if move not in self.vocab.move_to_id:
+            return None
+        return model_output_decimal[self.vocab.move_to_id[move]].item()
 
 
 if __name__ == "__main__":
