@@ -35,7 +35,7 @@ def get_stockfish_path():
         if "arm" in os_arch:
             return "../stockfish_mac_arm"
         else:
-            return "../stockfish_mac_86"
+            return "../stockfish_mac_x86"
     raise Exception("Unsupported OS")
 
 
