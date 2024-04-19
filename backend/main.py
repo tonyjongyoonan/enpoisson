@@ -99,6 +99,10 @@ def root():
 
 @app.post("/get-human-move")
 def get_human_move(position: ChessPosition):
+    """
+    Output format:
+    { "e4": 0.5 }
+    """
     top_k = position.top_k if position.top_k is not None else 3
     elo = position.elo
     return chess_engines[(elo, position.is_white_move)].get_human_move(
@@ -114,8 +118,18 @@ def get_difficulty(position: Difficulty):
     chess_board = chess.Board(position.fen)
     # each move is a dictionary with keys "Move", "Centipawn", "Mate"
     stockfish_top_5 = stockfish.get_top_moves(5)
-    moves_uci = [move["Move"] for move in stockfish_top_5]
-    evals = [int(move["Centipawn"]) / 100.0 for move in stockfish_top_5]
+    eval = stockfish.get_evaluation()
+    if eval["type"] == "mate":
+        num_moves = eval["value"]
+        eval_str = f'{"" if num_moves > 0 else "-"}M{abs(num_moves)}'
+    else:
+        eval_str = f"{eval['value'] / 100.0:.2f}"
+
+    stockfish_top_5_not_none = [
+        move for move in stockfish_top_5 if move["Centipawn"] is not None
+    ]
+    moves_uci = [move["Move"] for move in stockfish_top_5_not_none]
+    evals = [int(move["Centipawn"]) / 100.0 for move in stockfish_top_5_not_none]
     moves_san = [chess_board.san(chess.Move.from_uci(move)) for move in moves_uci]
     engine = chess_engines[(position.elo, position.is_white_move)]
     probabilities = [
@@ -127,7 +141,10 @@ def get_difficulty(position: Difficulty):
     result = 1 / (1 + np.exp(-scaled_evals))
     sum_x = np.sum(result)
     normalized_result = result / sum_x
-    return np.dot(normalized_result, probabilities_zeroed)
+    return {
+        "eval": eval_str,
+        "difficulty": np.dot(normalized_result, probabilities_zeroed),
+    }
 
 
 @app.post("/get-explanation")
