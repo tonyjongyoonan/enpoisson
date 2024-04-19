@@ -30,7 +30,7 @@ export default function Bar(props) {
       fillerStyle = {
         width: 44,
         height: `${value}%`,
-        backgroundColor: "white",
+        backgroundColor: "black",
         textAlign: "center",
       }
     }
@@ -38,7 +38,7 @@ export default function Bar(props) {
     return(
         <div style={containerStyle}>
             <div style={fillerStyle}>
-                <span style={{color: color === "red" ? "black" : value < 3 ? "black" : "white"}}>{label}</span>
+                <span style={{color: color === "red" ? "white" : value < 3 ? "black" : "white"}}>{label}</span>
             </div>
         </div>
     )
