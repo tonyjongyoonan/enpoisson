@@ -20,6 +20,8 @@ app.add_middleware(
 )
 
 supported_configs = [
+    (1100, chess.WHITE),
+    (1100, chess.BLACK),
     (1500, chess.WHITE),
     (1500, chess.BLACK),
     (2100, chess.WHITE),
