@@ -51,7 +51,7 @@ const Play = () => {
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
           is_white_move: turn === 'white' ? false : true,
-          elo: 2100
+          elo: elo
         })
       });
       const data = await response.json();
@@ -110,7 +110,7 @@ const Play = () => {
         return false;
       } else if (chess.current.isDraw()) {
         console.log('draw');
-        setIsCheckmate(true);
+        setIsDraw(true);
         return false;
       }
       setTimeout(() => {
