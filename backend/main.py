@@ -8,6 +8,7 @@ import chess
 import database
 from stockfish import Stockfish
 import numpy as np
+import platform
 
 app = FastAPI()
 app.add_middleware(
@@ -20,7 +21,8 @@ app.add_middleware(
 
 supported_configs = [(1500, chess.WHITE), (1500, chess.BLACK)]
 
-stockfish = Stockfish("../stockfish", depth=20)
+stockfish_path = f"../stockfish_{platform.system().lower()}"
+stockfish = Stockfish(stockfish_path, depth=18)
 
 
 def config_to_str(config: tuple[int, bool]) -> str:
