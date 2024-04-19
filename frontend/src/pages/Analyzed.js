@@ -30,6 +30,8 @@ const Analyzed = () => {
   const [feedback, setFeedback] = useState("");
   const [recMove, setRecMove] = useState("");
   const [newDifficulty, setDifficulty] = useState(0);
+  const [stockfish, setStockfish] = useState(50);
+  const [stockfish_label, setStockfishLabel] = useState("0.0");
 
   const getPgnMoves = (pgn) => {
     const newChess = new Chess();
@@ -91,7 +93,24 @@ const Analyzed = () => {
       });
       console.log(chess.current.history().slice(Math.max(0, no_moves - 16), no_moves));
       const data = await response.json();
-      setDifficulty((data + 5) * 10);
+      setDifficulty(data.difficulty * 200)
+      const sf_eval = data.eval;
+      if (sf_eval.charAt(0) === 'M' || sf_eval.charAt(1) === 'M') {
+        // mate 
+        if (sf_eval.charAt(0) === 'M') {
+          // white mate
+          setStockfish(0);
+        } else {
+          // black mate
+          setStockfish(100);
+        }
+        setStockfishLabel(sf_eval);
+      } else {
+        // not mate 
+        setStockfishLabel(sf_eval);
+        let scaled_val = 100 - (Number(sf_eval) + 5) * 10;
+        setStockfish(Math.max(1, Math.min(99, scaled_val)))
+      }
       console.log(data);
     } catch (error) {
       console.log(error);
@@ -248,7 +267,8 @@ const Analyzed = () => {
       </div>
       <div className="analysis-page-container">
         {/* <Progress.Line showInfo={false} strokeColor={"white"} vertical={true}/> */}
-        <Bar color={"black"} value={newDifficulty} label={newDifficulty < 30 ? "easy" : newDifficulty < 70 ? "med" : "hard"}/>
+        <Bar color={"red"} value={Math.min(100, newDifficulty)} label={Math.floor(newDifficulty)}/>
+        <Bar color={"black"} value = {stockfish} label = {stockfish_label}/>
         <div className="chessboard-container">
           <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
         </div>
