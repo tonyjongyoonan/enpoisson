@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, StringConstraints
 from typing_extensions import Annotated, Optional, Literal
-from annotated_types import MaxLen
+from annotated_types import MaxLen, MinLen
 
 elo_type = Literal[1100, 1500, 1900]
 
@@ -23,7 +23,7 @@ class UserLogin(BaseModel):
 
 class ChessPosition(BaseModel):
     fen: str
-    last_16_moves: Annotated[list[str], MaxLen(16)]
+    last_16_moves: Annotated[list[str], MinLen(1), MaxLen(16)]
     is_white_move: bool
     top_k: int = 3
     elo: elo_type
@@ -31,7 +31,7 @@ class ChessPosition(BaseModel):
 
 class Difficulty(BaseModel):
     fen: str
-    last_16_moves: Annotated[list[str], MaxLen(16)]
+    last_16_moves: Annotated[list[str], MinLen(1), MaxLen(16)]
     is_white_move: bool
     elo: elo_type = 1500
 
