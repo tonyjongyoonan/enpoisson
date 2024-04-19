@@ -89,6 +89,7 @@ const Analyzed = () => {
           elo: 1500
         })
       });
+      console.log(chess.current.history().slice(Math.max(0, no_moves - 16), no_moves));
       const data = await response.json();
       setDifficulty((data + 5) * 10);
       console.log(data);
