@@ -51,7 +51,7 @@ const Play = () => {
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
           is_white_move: turn === 'white' ? false : true,
-          elo: elo
+          elo: 2100
         })
       });
       const data = await response.json();
@@ -142,7 +142,7 @@ const Play = () => {
 
       {color && !elo && (<div className="level-buttons">
         <div>
-        <button className="level-500-button" onClick={() => setElo(1100)}>play vs. 1100</button>
+        <button className="level-500-button" onClick={() => setElo(1500)}>play vs. 1100</button>
       </div>
       <div>
         <button className="level-1000-button" onClick={() => setElo(1500)}>play vs. 1500</button>

@@ -16,9 +16,9 @@ function Home() {
           background: "#303030",
         }}
       >
-        <h6 style={{ color: gold, fontWeight: 400 }}>EN POISSON</h6>
+        <h6 style={{ color: gold, fontWeight: 400 }}></h6>
         <h1 style={{ color: gold, fontWeight: 350, lineHeight: "1.1", marginBottom: "80px" }}>
-          {currentUser ? 'Welcome, ${currentUser}' : 'Log in to play!'}
+          {currentUser ? 'Welcome, ${currentUser}' : 'En Poisson. Chess Engine'}
         </h1>
         <p style={{ color: gold, alignItems: "end", marginBottom: "20px", fontWeight: 350 }}>
           Learn chess better with our new innovative chess engine, recommending
