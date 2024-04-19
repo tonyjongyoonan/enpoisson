@@ -105,7 +105,7 @@
   cursor: pointer;
 }
 
-.stalemate-box, .checkmate-box {
+.stalemate-box, .checkmate-box, .analyze-button {
   margin: 10px auto;
   margin-left: 40px;
   background-color: #77b58a;

@@ -1,16 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import './Play.css';
 
 const Play = () => {
+  const navigate = useNavigate();
   const [fen, setFen] = useState('start');
   const chess = useRef(new Chess());
   const [color, setColor] = useState(null);
   const [turn, setTurn] = useState('white');
   const [isCheckmate, setIsCheckmate] = useState(false);
   const [isDraw, setIsDraw] = useState(false);
-  const [level, setLevel] = useState(null);
+  const [elo, setElo] = useState(null);
 
   const playRandomMove = () => {
     const moves = chess.current.moves();
@@ -48,7 +50,8 @@ const Play = () => {
         body: JSON.stringify({
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
-          is_white_move: turn === 'white' ? false : true
+          is_white_move: turn === 'white' ? false : true,
+          elo: elo
         })
       });
       const data = await response.json();
@@ -134,18 +137,18 @@ const Play = () => {
         </div>
       </div>)}
 
-      {color && !level && (<div className="level-buttons">
+      {color && !elo && (<div className="level-buttons">
         <div>
-        <button className="level-500-button" onClick={() => setLevel(500)}>play vs. 500</button>
+        <button className="level-500-button" onClick={() => setElo(1100)}>play vs. 1100</button>
       </div>
       <div>
-        <button className="level-1000-button" onClick={() => setLevel(1000)}>play vs. 1000</button>
+        <button className="level-1000-button" onClick={() => setElo(1500)}>play vs. 1500</button>
       </div>
       <div>
-        <button className="level-1500-button" onClick={() => setLevel(1500)}>play vs. 1500</button>
+        <button className="level-1500-button" onClick={() => setElo(2100)}>play vs. 2100</button>
       </div>
     </div>)}
-      {color && level && (
+      {color && elo && (
         <div className="game-container">
           <div className="chessboard-container">
             <Chessboard
@@ -167,6 +170,7 @@ const Play = () => {
               if (color === 'black') {
                 handleColorChange('black');
               }
+              window.location.reload();
             }}>reset</button></div>
             <div><button className="undo-button" onClick={() => {
                   setIsCheckmate(false);
@@ -180,6 +184,9 @@ const Play = () => {
                     setFen(chess.current.fen());
                   }, 600); // undo twice to undo model move as well
                 }}>undo</button></div>
+            <div><button className="analyze-button" onClick={() => {
+              navigate('/analyzed', { state: { pgn: chess.current.pgn() } });
+            }}>analyze</button></div>
           </div>
         </div>
       )}
