@@ -50,7 +50,7 @@ const Play = () => {
         body: JSON.stringify({
           fen: chess.current.fen(), 
           last_16_moves: chess.current.history().slice(Math.max(0, no_moves - 16), no_moves),
-          is_white_move: turn === 'white' ? false : true,
+          is_white_move: chess.current.history().length % 2 !== 1, // if odd number of moves, then return false (black) since we want model to give black move
           elo: elo
         })
       });
