@@ -294,6 +294,25 @@ class SENetThree(nn.Module):
         x = self.fc(x)
         return x
     
+class SENetFour(nn.Module):
+    def __init__(self, d_out):
+        super(SENetFour, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(72 * 8 * 8, d_out)
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+    
 class RNNModel(nn.Module):
     def __init__(
         self,
@@ -622,15 +641,17 @@ class MultiModalEight(nn.Module):
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
-    
-class CNNtoTransformer(nn.Module):
+
+class MultiModalNine(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
-        self.cnn = SENetThree(256)
-        self.transformer
-        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(256, 256), nn.ReLU(), nn.Dropout(0.2), nn.Linear(256, d_out))
+        self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 128, dropout=dropout, bidirectional=True)
+        self.cnn = SENetFour(256)
+        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(256+128, 256), nn.ReLU(), nn.Dropout(0.2), nn.Linear(256, d_out))
 
     def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
         cnn_encoding = self.cnn(board)
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
+    
