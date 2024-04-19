@@ -95,6 +95,7 @@ const Play = () => {
 
   // Function to handle piece drop
   const onDrop = (sourceSquare, targetSquare, piece) => {
+    console.log(chess.current.ascii())
     try {
       let move = chess.current.move({
         from: sourceSquare,
@@ -102,14 +103,16 @@ const Play = () => {
         promotion: 'q'
       });
       if (move === null) return;
-      if (chess.current.isGameOver() || chess.current.isDraw()) return false;
       setFen(chess.current.fen());
       if (chess.current.isCheckmate()) {
         console.log('checkmate');
+        setIsCheckmate(true);
+        return false;
       } else if (chess.current.isDraw()) {
         console.log('draw');
+        setIsCheckmate(true);
+        return false;
       }
-
       setTimeout(() => {
         getEngineMove();
       }, 500);
