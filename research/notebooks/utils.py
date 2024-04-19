@@ -54,7 +54,7 @@ class MultimodalDatasetWithFEN(Dataset):
         self.boards = boards
         self.lengths = lengths
         self.labels = labels
-        self.fens = fens['fens']
+        self.fens = fens
 
     def __len__(self):
         return len(self.sequences)
