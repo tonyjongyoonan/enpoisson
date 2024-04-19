@@ -2,7 +2,7 @@ from pydantic import BaseModel, EmailStr, StringConstraints
 from typing_extensions import Annotated, Optional, Literal
 from annotated_types import MaxLen, MinLen
 
-elo_type = Literal[1100, 1500, 1900]
+elo_type = Literal[1100, 1500, 2100]
 
 
 class UserCreate(BaseModel):
