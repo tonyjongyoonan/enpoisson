@@ -11,6 +11,7 @@ import random
 import numpy as np
 import dask.dataframe as dd 
 from torch.utils.data import Dataset
+from bitarray import bitarray
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -180,6 +181,41 @@ def process_raw_csv(filepath):
     # This gives us 99,300 Games when we don't filter games with more than 80 half-moves
     return grouped_df
 
+def construct_vocab(df, algebraic_notation = True):
+    vocab = Vocabulary()
+    for game_board, game_moves in zip(df["board"], df["moves"]):
+        moves = game_moves.split()
+        if algebraic_notation:
+            pass
+    return vocab
+        # encoded_moves = []
+        # for move in moves:
+        #     # Create a move object from the coordinate notation
+        #     move_obj = chess.Move.from_uci(move)
+        #     if move_obj not in chess_board.legal_moves:
+        #         break
+        #     else:
+        #         if algebraic_notation:
+        #             algebraic_move = chess_board.san(move_obj)
+        #             chess_board.push(move_obj)
+        #             vocab.add_move(algebraic_move)
+        #             encoded_move = vocab.get_id(algebraic_move)
+        #             encoded_moves.append(encoded_move)
+        #         else:
+        #             vocab.add_move(move)
+        #             encoded_move = vocab.get_id(move)
+        #             encoded_moves.append(encoded_move)
+        # chess_board.reset()
+        # del moves
+        # boards = boards[: len(encoded_moves)]
+        # # Now generate X,Y with sampling
+        # for i in range(len(encoded_moves) - 1):
+        #     # TODO: Figure out how to deal with black orientation 'seeing' a different board
+        #     if random.uniform(0, 1) <= sampling_rate:
+        #         label = encoded_moves[i + 1]
+        #         fens.append(boards[i])
+        #         board_states.append(fen_to_array_three(boards[i]))
+        #         next_moves.append(label)
 def fen_to_array(string):
     piece_to_index = {
         "p": 0,
@@ -248,15 +284,64 @@ def fen_to_array_two(string):
     # channels 21-22 is for castles
 
     return ans
+
+def fen_to_array_three(string):
+    board = string.split(" ")[0]
+    rows = board.split("/")
+    parts = string.split(' ')
+    # Adjusted to 17 to account for separate layers for black and white pieces of each type
+    ans = [[[False for _ in range(8)] for _ in range(8)] for _ in range(17)]
+    # Mapping for pieces to their respective index in the 12 layer array
+    # White pieces are in the first 6 layers and black pieces in the last 6 layers
+    piece_to_index = {
+        "p": 0,
+        "r": 1,
+        "n": 2,
+        "b": 3,
+        "q": 4,
+        "k": 5,
+        "P": 6,
+        "R": 7,
+        "N": 8,
+        "B": 9,
+        "Q": 10,
+        "K": 11,
+    }
+
+    for row in range(8):
+        curr_row = rows[row]
+        offset = 0
+        for piece in range(len(curr_row)):
+            curr_piece = curr_row[piece]
+            if curr_piece not in piece_to_index.keys():
+                offset += int(curr_piece) - 1
+            else:
+                current_board = ans[piece_to_index[curr_piece]]
+                current_board[row][offset + piece] = True
+                ans[piece_to_index[curr_piece]] = current_board
+    # Channel for the player to move (True if white's move, False if black's)
+    ans[12] = [[True if parts[1] == 'w' else False for _ in range(8)] for _ in range(8)]
+
+    # Castling rights
+    castling = parts[2]
+    ans[13] = [[True if 'K' in castling else False for _ in range(8)] for _ in range(8)]
+    ans[14] = [[True if 'Q' in castling else False for _ in range(8)] for _ in range(8)]
+    ans[15] = [[True if 'k' in castling else False for _ in range(8)] for _ in range(8)]
+    ans[16] = [[True if 'q' in castling else False for _ in range(8)] for _ in range(8)]
+
+    return ans
     
-def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
+def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True, vocab_old = None):
     """
     Input: Dataframe of training data in which each row represents a full game played between players
     Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
     """
     board_states = []
     next_moves = []
-    vocab = Vocabulary()
+    fens = []
+    vocab = vocab_old
+    if vocab is None:
+        vocab = Vocabulary()
     chess_board = chess.Board()
     for game_board, game_moves in zip(df["board"], df["moves"]):
         moves = game_moves.split()
@@ -266,7 +351,7 @@ def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
         for move in moves:
             # Create a move object from the coordinate notation
             move_obj = chess.Move.from_uci(move)
-            if move_obj not in chess_board.legal_moves:
+            if algebraic_notation and (move_obj not in chess_board.legal_moves):
                 break
             else:
                 if algebraic_notation:
@@ -279,17 +364,20 @@ def df_to_data_board_only(df, sampling_rate=1.0, algebraic_notation=True):
                     vocab.add_move(move)
                     encoded_move = vocab.get_id(move)
                     encoded_moves.append(encoded_move)
-        chess_board.reset()
+        if algebraic_notation:
+            chess_board.reset()
+        del moves
         boards = boards[: len(encoded_moves)]
         # Now generate X,Y with sampling
         for i in range(len(encoded_moves) - 1):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
+            if random.uniform(0, 1) <= sampling_rate:
                 label = encoded_moves[i + 1]
-                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
+                fens.append(boards[i])
+                board_states.append(fen_to_array_three(boards[i]))
                 next_moves.append(label)
-    return board_states, next_moves, vocab
-
+    del chess_board
+    return np.asarray(board_states,dtype=np.bool_), fens, np.asarray(next_moves), vocab
 
 def df_to_data_simple(
     df,
@@ -332,7 +420,7 @@ def df_to_data_simple(
         # Now generate X,Y with sampling
         for i in range(len(encoded_moves) - 1):
             # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
+            if random.uniform(0, 1) <= sampling_rate:
                 # Board
                 board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
                 # Sequence of Moves

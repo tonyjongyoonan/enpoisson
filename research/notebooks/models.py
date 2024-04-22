@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-INPUT_CHANNELS = 12
+INPUT_CHANNELS = 17
 
 class ChessCNN(nn.Module):
     def __init__(self, d_out):
@@ -182,18 +182,20 @@ class ConvBlockTwo(nn.Module):
             in_channels, out_channels, kernel_size, stride, padding, bias=False
         )
         self.conv2 = nn.Conv2d(
-            in_channels, out_channels, kernel_size, stride, padding, bias=False
+            out_channels, out_channels, kernel_size, stride, padding, bias=False
         )
         self.bn = nn.BatchNorm2d(out_channels)
         self.se = SELayer(out_channels)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn(x)
-        # x = F.relu(x)
-        # x = self.conv2(x)
-        # x = self.bn(x)
-        x = self.se(x)
+        x_new = self.conv1(x)
+        x_new = self.bn(x_new)
+        x_new = F.relu(x_new)
+        x_new = self.conv2(x_new)
+        x_new = self.bn(x_new)
+        x_new = self.se(x_new)
+        x_new += x
+        x_new = F.relu(x_new)
         return x
 
 class SELayer(nn.Module):
@@ -311,6 +313,51 @@ class SENetFour(nn.Module):
         x = self.conv4(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
+        return x
+    
+class SENetPure(nn.Module):
+    def __init__(self, d_out):
+        super(SENetPure, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(72 * 8 * 8, 256)
+        self.fc2 = nn.Linear(256, d_out)
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        x = self.fc2(x)
+        return x
+    
+class SENetPureTwo(nn.Module):
+    def __init__(self, d_out):
+        super(SENetPureTwo, self).__init__()
+        self.conv0 = nn.Conv2d(INPUT_CHANNELS, 72, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(72)
+        self.conv1 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(72 * 8 * 8, 256)
+        self.fc2 = nn.Linear(256, d_out)
+
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv0(x)))
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        x = self.fc2(x)
         return x
     
 class RNNModel(nn.Module):
