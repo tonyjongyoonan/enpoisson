@@ -12,19 +12,19 @@ const Team = () => {
         {
             name: 'Ishaan Lal',
             image: ishaan,
-            description: 'Research',
+            description: 'LLM',
             github: 'https://github.com/ishlal'
         },
         {
             name: 'Andrew Jiang',
             image: andrew,
-            description: 'Research',
+            description: 'LLM',
             github: 'https://github.com/aJayz54'
         },
         {
             name: 'Joseph Lee',
             image: joe,
-            description: 'Research',
+            description: 'Engine',
             github: 'https://github.com/jiosephlee'
         },
         {
