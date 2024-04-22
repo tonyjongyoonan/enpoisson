@@ -98,22 +98,41 @@ const Play = () => {
     }
   }
 
-  // Function to handle piece click
+  const squareStyling = ({ pieceSquare, history }) => {
+    const sourceSquare = history.length && history[history.length - 1].from;
+    const targetSquare = history.length && history[history.length - 1].to;
+    return {
+      [pieceSquare]: { backgroundColor: "rgba(255, 255, 0, 0.4)" },
+      ...(history.length && {
+        [sourceSquare]: {
+          backgroundColor: "rgba(255, 255, 0, 0.4)"
+        }
+      }),
+      ...(history.length && {
+        [targetSquare]: {
+          backgroundColor: "rgba(255, 255, 0, 0.4)"
+        }
+      })
+    };
+  };
+  
 
+  // Function to handle piece click
   const onClick = (sourceSquare) => {
-    if (chess.current.get(sourceSquare) === null) return;
-    let legalMoves = chess.current.moves({ square: sourceSquare, verbose: true });
-    let squaresToHighlight = legalMoves.map(move => move.to);
-    let newSquareStyles = {};
-    squaresToHighlight.forEach(square => {
-      newSquareStyles[square] = {
-        backgroundColor: 'rgba(255, 255, 0, 0.4)',
-        background: 'radial-gradient(circle, #fffc00 36%, transparent 40%)',
-        borderRadius: '50%'
-      };
-    });
-    console.log(newSquareStyles);
-    setSquareStyles(newSquareStyles);
+    setSquareStyles(squareStyling({ pieceSquare: sourceSquare, history: chess.current.history({ verbose: true }) }));
+    // if (chess.current.get(sourceSquare) === null) return;
+    // let legalMoves = chess.current.moves({ square: sourceSquare, verbose: true });
+    // let squaresToHighlight = legalMoves.map(move => move.to);
+    // let newSquareStyles = {};
+    // squaresToHighlight.forEach(square => {
+    //   newSquareStyles[square] = {
+    //     backgroundColor: 'rgba(255, 255, 0, 0.4)',
+    //     background: 'radial-gradient(circle, #fffc00 36%, transparent 40%)',
+    //     borderRadius: '50%'
+    //   };
+    // });
+    // console.log(newSquareStyles);
+    // setSquareStyles(newSquareStyles);
   }
   
   // Function to handle piece drop
