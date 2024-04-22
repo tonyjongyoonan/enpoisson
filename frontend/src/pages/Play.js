@@ -13,6 +13,7 @@ const Play = () => {
   const [isCheckmate, setIsCheckmate] = useState(false);
   const [isDraw, setIsDraw] = useState(false);
   const [elo, setElo] = useState(null);
+  const [squareStyles, setSquareStyles] = useState([]);
 
   const playRandomMove = () => {
     const moves = chess.current.moves();
@@ -97,6 +98,24 @@ const Play = () => {
     }
   }
 
+  // Function to handle piece click
+
+  const onClick = (sourceSquare) => {
+    if (chess.current.get(sourceSquare) === null) return;
+    let legalMoves = chess.current.moves({ square: sourceSquare, verbose: true });
+    let squaresToHighlight = legalMoves.map(move => move.to);
+    let newSquareStyles = {};
+    squaresToHighlight.forEach(square => {
+      newSquareStyles[square] = {
+        backgroundColor: 'rgba(255, 255, 0, 0.4)',
+        background: 'radial-gradient(circle, #fffc00 36%, transparent 40%)',
+        borderRadius: '50%'
+      };
+    });
+    console.log(newSquareStyles);
+    setSquareStyles(newSquareStyles);
+  }
+  
   // Function to handle piece drop
   const onDrop = (sourceSquare, targetSquare, piece) => {
     console.log(chess.current.ascii())
@@ -161,10 +180,12 @@ const Play = () => {
             <Chessboard
               position={fen}
               onPieceDrop={onDrop}
+              onSquareClick={onClick}
               boardOrientation={color}
               boardWidth={560}
               arePiecesDraggable={true}
-            />
+              squareStyles={squareStyles}
+              />
           </div>
           <div className="game-buttons">
             {isCheckmate && <input type="text" value="Checkmate!" readOnly className="checkmate-box" />}
