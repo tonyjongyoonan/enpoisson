@@ -28,7 +28,11 @@ const Play = () => {
 
   const handleColorChange = (newColor) => {
     setColor(newColor);
-    if (newColor === 'black') {
+  };
+
+  const handleEloChange = (newElo) => {
+    setElo(newElo);
+    if (color === 'black') {
       const opening_moves = ['e4', 'd4', 'Nf3']
       // play one out of the three
       const move = opening_moves[Math.floor(Math.random() * opening_moves.length)];
@@ -37,7 +41,7 @@ const Play = () => {
         setFen(chess.current.fen());
       }, 500);
     }
-  };
+  }
   
   const getEngineMove = async () => {
     const no_moves = chess.current.history().length;
@@ -142,13 +146,13 @@ const Play = () => {
 
       {color && !elo && (<div className="level-buttons">
         <div>
-        <button className="level-500-button" onClick={() => setElo(1500)}>play vs. 1100</button>
+        <button className="level-500-button" onClick={() => handleEloChange(1500)}>play vs. 1100</button>
       </div>
       <div>
-        <button className="level-1000-button" onClick={() => setElo(1500)}>play vs. 1500</button>
+        <button className="level-1000-button" onClick={() => handleEloChange(1500)}>play vs. 1500</button>
       </div>
       <div>
-        <button className="level-1500-button" onClick={() => setElo(2100)}>play vs. 2100</button>
+        <button className="level-1500-button" onClick={() => handleEloChange(2100)}>play vs. 2100</button>
       </div>
     </div>)}
       {color && elo && (
@@ -170,9 +174,9 @@ const Play = () => {
               setFen(chess.current.fen());
               setIsCheckmate(false);
               setIsDraw(false);
-              if (color === 'black') {
-                handleColorChange('black');
-              }
+              // if (color === 'black') {
+              //   handleColorChange('black');
+              // }
               window.location.reload();
             }}>reset</button></div>
             <div><button className="undo-button" onClick={() => {
