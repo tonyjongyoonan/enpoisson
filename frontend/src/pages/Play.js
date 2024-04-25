@@ -13,6 +13,7 @@ const Play = () => {
   const [isCheckmate, setIsCheckmate] = useState(false);
   const [isDraw, setIsDraw] = useState(false);
   const [elo, setElo] = useState(null);
+  const [squareStyles, setSquareStyles] = useState([]);
 
   const playRandomMove = () => {
     const moves = chess.current.moves();
@@ -28,7 +29,11 @@ const Play = () => {
 
   const handleColorChange = (newColor) => {
     setColor(newColor);
-    if (newColor === 'black') {
+  };
+
+  const handleEloChange = (newElo) => {
+    setElo(newElo);
+    if (color === 'black') {
       const opening_moves = ['e4', 'd4', 'Nf3']
       // play one out of the three
       const move = opening_moves[Math.floor(Math.random() * opening_moves.length)];
@@ -37,7 +42,7 @@ const Play = () => {
         setFen(chess.current.fen());
       }, 500);
     }
-  };
+  }
   
   const getEngineMove = async () => {
     const no_moves = chess.current.history().length;
@@ -93,6 +98,43 @@ const Play = () => {
     }
   }
 
+  const squareStyling = ({ pieceSquare, history }) => {
+    const sourceSquare = history.length && history[history.length - 1].from;
+    const targetSquare = history.length && history[history.length - 1].to;
+    return {
+      [pieceSquare]: { backgroundColor: "rgba(255, 255, 0, 0.4)" },
+      ...(history.length && {
+        [sourceSquare]: {
+          backgroundColor: "rgba(255, 255, 0, 0.4)"
+        }
+      }),
+      ...(history.length && {
+        [targetSquare]: {
+          backgroundColor: "rgba(255, 255, 0, 0.4)"
+        }
+      })
+    };
+  };
+  
+
+  // Function to handle piece click
+  const onClick = (sourceSquare) => {
+    setSquareStyles(squareStyling({ pieceSquare: sourceSquare, history: chess.current.history({ verbose: true }) }));
+    // if (chess.current.get(sourceSquare) === null) return;
+    // let legalMoves = chess.current.moves({ square: sourceSquare, verbose: true });
+    // let squaresToHighlight = legalMoves.map(move => move.to);
+    // let newSquareStyles = {};
+    // squaresToHighlight.forEach(square => {
+    //   newSquareStyles[square] = {
+    //     backgroundColor: 'rgba(255, 255, 0, 0.4)',
+    //     background: 'radial-gradient(circle, #fffc00 36%, transparent 40%)',
+    //     borderRadius: '50%'
+    //   };
+    // });
+    // console.log(newSquareStyles);
+    // setSquareStyles(newSquareStyles);
+  }
+  
   // Function to handle piece drop
   const onDrop = (sourceSquare, targetSquare, piece) => {
     console.log(chess.current.ascii())
@@ -142,13 +184,13 @@ const Play = () => {
 
       {color && !elo && (<div className="level-buttons">
         <div>
-        <button className="level-500-button" onClick={() => setElo(1500)}>play vs. 1100</button>
+        <button className="level-500-button" onClick={() => handleEloChange(1500)}>play vs. 1100</button>
       </div>
       <div>
-        <button className="level-1000-button" onClick={() => setElo(1500)}>play vs. 1500</button>
+        <button className="level-1000-button" onClick={() => handleEloChange(1500)}>play vs. 1500</button>
       </div>
       <div>
-        <button className="level-1500-button" onClick={() => setElo(2100)}>play vs. 2100</button>
+        <button className="level-1500-button" onClick={() => handleEloChange(2100)}>play vs. 2100</button>
       </div>
     </div>)}
       {color && elo && (
@@ -157,10 +199,12 @@ const Play = () => {
             <Chessboard
               position={fen}
               onPieceDrop={onDrop}
+              onSquareClick={onClick}
               boardOrientation={color}
               boardWidth={560}
               arePiecesDraggable={true}
-            />
+              squareStyles={squareStyles}
+              />
           </div>
           <div className="game-buttons">
             {isCheckmate && <input type="text" value="Checkmate!" readOnly className="checkmate-box" />}
@@ -170,9 +214,9 @@ const Play = () => {
               setFen(chess.current.fen());
               setIsCheckmate(false);
               setIsDraw(false);
-              if (color === 'black') {
-                handleColorChange('black');
-              }
+              // if (color === 'black') {
+              //   handleColorChange('black');
+              // }
               window.location.reload();
             }}>reset</button></div>
             <div><button className="undo-button" onClick={() => {

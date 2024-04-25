@@ -9,8 +9,18 @@
 .chessboard-container {
   border: 6px solid #353434;
   border-radius: 8px;
-  height: 100%;
   margin: 0 0 0 0;
+}
+
+.flip-button {
+  margin-top: 5px;
+  width: 20%;
+  border: 3px solid #353434;
+  border-radius: 8px;
+  background-color: #353434;
+  cursor: pointer;
+  color: white;
+  float: right;
 }
 
 .analysis-text-container {

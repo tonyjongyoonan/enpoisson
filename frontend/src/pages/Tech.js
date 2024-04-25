@@ -20,7 +20,7 @@ const Tech = () => {
                 ))}
             </div>
             <div className="tech-description">
-                <p>In our model, we measure “move-matching accuracy”, how often En Poisson's predicted move</p>
+                <p>In our model, we measure “move-matching accuracy”: how often En Poisson's predicted move</p>
                 <p>is the same as the human move played in real online games.</p>
                 <p style={{ marginBottom: '1.5rem' }}></p>
                 <p>As a comparison, we looked at how depth-limited Stockfish and Maia do on the same prediction task.</p>
