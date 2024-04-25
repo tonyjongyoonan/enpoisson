@@ -105,10 +105,38 @@
   cursor: pointer;
 }
 
-.stalemate-box, .checkmate-box, .analyze-button {
+.analyze-button {
   margin: 10px auto;
   margin-left: 40px;
   background-color: #77b58a;
+  box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease 0s;
+  padding: 5px 0px;
+  width: 100px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.checkmate-box {
+  margin: 10px auto;
+  margin-left: 40px;
+  background-color: #c4665b;
+  box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease 0s;
+  padding: 5px 0px;
+  width: 100px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.stalemate-box {
+  margin: 10px auto;
+  margin-left: 40px;
+  background-color: #c1a752;
   box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.4);
   transition: all 0.3s ease 0s;
   padding: 5px 0px;
