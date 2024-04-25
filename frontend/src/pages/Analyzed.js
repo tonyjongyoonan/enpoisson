@@ -29,6 +29,7 @@ const Analyzed = () => {
   const [arrows, setArrows] = useState([]);
   const [feedback, setFeedback] = useState("");
   const [recMove, setRecMove] = useState("");
+  const [orientation, setOrientation] = useState(true);
   const [newDifficulty, setDifficulty] = useState(0);
   const [stockfish, setStockfish] = useState(50);
   const [stockfish_label, setStockfishLabel] = useState("0.0");
@@ -263,14 +264,16 @@ const Analyzed = () => {
   return (
     <div className="analysis-page-layout">
       <div className="analysis-header">
-        <h2>Analysis</h2>
+        <h2 className="analysis-title">Analysis</h2>
       </div>
       <div className="analysis-page-container">
-        {/* <Progress.Line showInfo={false} strokeColor={"white"} vertical={true}/> */}
         <Bar color={"red"} value={100 - Math.min(100, newDifficulty)} label={Math.floor(newDifficulty)}/>
-        <Bar color={"black"} value = {stockfish} label = {stockfish_label}/>
-        <div className="chessboard-container">
-          <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows}/>
+        <Bar color={"black"} value = {stockfish} label = {stockfish_label} boardOrientation={orientation}/>
+        <div className="middle-container">
+          <div className="chessboard-container">
+            <Chessboard position={fen} areArrowsAllowed={false} arePiecesDraggable={false} boardWidth={560} customArrows={arrows} boardOrientation={orientation ? "white" : "black"}/>
+          </div>
+          <button className="flip-button" onClick={() => setOrientation(!orientation)}>Switch Sides</button>
         </div>
         <div className="analysis-right-container">
           <AnalysisMoves moves={moves} index={index} updateMove={updateMove}/>
