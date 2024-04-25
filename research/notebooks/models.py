@@ -361,14 +361,14 @@ class SENetPureTwo(nn.Module):
         return x
 
 class SENetPureThree(nn.Module):
-    def __init__(self, d_out):
-        super(SENetPure, self).__init__()
+    def __init__(self, d_model, d_out):
+        super(SENetPureThree, self).__init__()
         self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
         self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
         self.conv3 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
         self.conv4 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
-        self.fc = nn.Linear(72 * 8 * 8, 256)
-        self.fc2 = nn.Linear(256, d_out)
+        self.fc = nn.Linear(72 * 8 * 8, d_model)
+        self.fc2 = nn.Linear(d_model, d_out)
 
 
     def forward(self, x):
