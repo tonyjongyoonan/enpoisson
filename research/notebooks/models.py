@@ -359,6 +359,47 @@ class SENetPureTwo(nn.Module):
         x = self.fc(x)
         x = self.fc2(x)
         return x
+
+class SENetPureThree(nn.Module):
+    def __init__(self, d_out):
+        super(SENetPure, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(72 * 8 * 8, 256)
+        self.fc2 = nn.Linear(256, d_out)
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        x = self.fc2(x)
+        return x
+    
+class SENetPureThreeBase(nn.Module):
+    def __init__(self, d_out):
+        super(SENetPureThreeBase, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(72 * 8 * 8, 256)
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+
+        return x
     
 class RNNModel(nn.Module):
     def __init__(
@@ -547,7 +588,23 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         x = x + self.pe[:x.size(1)].transpose(0, 1)
         return self.dropout(x)
-    
+
+
+class ChessTransformerBase(nn.Module):
+    def __init__(self, vocab, d_model, nhead, num_layers, max_seq_length=750, dropout=0.1):
+        super(ChessTransformerBase, self).__init__()
+        self.vocab = vocab
+        self.d_model = d_model
+        self.vocab_size = len(vocab.id_to_move.keys())
+        self.embedding = nn.Embedding(self.vocab_size, d_model)
+        self.pos_encoder = PositionalEncoding(d_model, dropout, max_seq_length)
+        self.transformer = nn.Transformer(d_model=d_model, nhead=nhead,
+                                          num_encoder_layers=num_layers,
+                                          num_decoder_layers=num_layers, 
+                                          batch_first=True)
+        self.max_seq_length = max_seq_length
+
+
 class MultiModal(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
@@ -702,3 +759,38 @@ class MultiModalNine(nn.Module):
         pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
         return pred
     
+class MultiModalTen(nn.Module):
+    def __init__(self, vocab, d_model, nhead, num_layers, d_out, max_seq_length=750, dropout=0.1, pretrained_transformer=None, pretrained_cnn = None):
+        super(MultiModalTen, self).__init__()
+        # Initialize the Transformer for Chess sequences
+        self.transformer = ChessTransformerBase(vocab, d_model, nhead, num_layers, max_seq_length, dropout)
+        # Initialize the SENet for image-like inputs (like a chess board)
+        self.cnn = SENetPureThreeBase(d_model)
+        # Combined fully connected layers
+        self.dense = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(d_model * 2, d_model * 2),  # Assuming d_model is greater or equal to d_out for simplicity
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model * 2, d_out)
+        )
+        if pretrained_transformer is not None:
+            self.transformer.load_state_dict({name: param for name, param in pretrained_transformer.state_dict().items() if 'fc' not in name})
+        if pretrained_cnn is not None:
+            self.cnn.load_state_dict({name: param for name, param in pretrained_cnn.state_dict().items() if 'fc2' not in name})
+
+    def forward(self, src, tgt, img):
+        # Process sequences with the Transformer
+        transformer_output = self.transformer(src, tgt)
+        # Last state is used for prediction purposes
+        transformer_last_state = transformer_output[:, -1, :]
+        
+        # Process images with the SENet
+        cnn_output = self.cnn(img)
+        
+        # Combine the outputs
+        combined = torch.cat((transformer_last_state, cnn_output), dim=1)
+        # Final prediction
+        result = self.dense(combined)
+        
+        return result
