@@ -137,6 +137,9 @@ haha_longer.csv
 haha_longer_1500.csv
 haha-longer-longer-001.csv
 haha-longer-longer.csv
+research/notebooks/model_images/seq-transformer-exp-5.pth 
+research/notebooks/model_images/seq-transformer-exp-6.pth 
+
 #Python
 __pycache__
 haha-longer*
