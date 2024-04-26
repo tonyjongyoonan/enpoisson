@@ -77,32 +77,39 @@ class VocabularyForTransformer:
     def get_word(self, word_id):
         return self.id_to_word.get(word_id, None)
         
-class ChessDataset(Dataset):
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
+class CNNDataset(Dataset):
+    def __init__(self, boards, fens, labels):
+        self.boards = boards
+        self.fens = fens
+        self.labels = labels
 
     def __len__(self):
-        return len(self.X)
+        return len(self.boards)
 
     def __getitem__(self, idx):
-        features, label = self.X[idx], self.Y[idx]
-
-        return torch.tensor(features, dtype=torch.float32), torch.tensor(
-            label, dtype=torch.long
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.bool).float(),
+            self.fens[idx],
+            torch.tensor(self.labels[idx], dtype=torch.long),
         )
 
+
 class SequenceDataset(Dataset):
-    def __init__(self, sequences, lengths, labels):
+    def __init__(self, sequences, fens, lengths, labels):
         self.sequences = sequences
         self.lengths = lengths
+        self.fens = fens
         self.labels = labels
 
     def __len__(self):
         return len(self.sequences)
 
     def __getitem__(self, idx):
-        return self.sequences[idx], self.lengths[idx], self.labels[idx]
+        return (torch.tensor(self.sequences[idx], dtype=torch.long), 
+                self.fens[idx],
+                torch.tensor(self.lengths[idx], dtype=torch.long), 
+                torch.tensor(self.labels[idx], dtype=torch.long)
+        )
     
 class MultimodalDataset(Dataset):
     def __init__(self, sequences, boards, lengths, labels):

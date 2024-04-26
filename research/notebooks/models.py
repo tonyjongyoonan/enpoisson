@@ -361,7 +361,7 @@ class SENetPureTwo(nn.Module):
         return x
 
 class SENetPureThree(nn.Module):
-    def __init__(self, d_model, d_out):
+    def __init__(self, d_out, d_model):
         super(SENetPureThree, self).__init__()
         self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
         self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
@@ -381,14 +381,16 @@ class SENetPureThree(nn.Module):
         x = self.fc2(x)
         return x
     
-class SENetPureThreeBase(nn.Module):
-    def __init__(self, d_out):
-        super(SENetPureThreeBase, self).__init__()
-        self.conv1 = ConvBlock(INPUT_CHANNELS, 72, kernel_size=3, stride=1, padding=1)
-        self.conv2 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
-        self.conv3 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
-        self.conv4 = ConvBlock(72, 72, kernel_size=3, stride=1, padding=1)
-        self.fc = nn.Linear(72 * 8 * 8, 256)
+class SENetPureFour(nn.Module):
+    def __init__(self, d_out, d_inner_channels, d_model):
+        super(SENetPureFour, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, d_inner_channels, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(d_inner_channels, d_inner_channels, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(d_inner_channels, d_inner_channels, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlock(d_inner_channels, d_inner_channels, kernel_size=3, stride=1, padding=1)
+        self.conv5 = ConvBlock(d_inner_channels, d_inner_channels, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(d_inner_channels * 8 * 8, d_model)
+        self.fc2 = nn.Linear(d_model, d_out)
 
 
     def forward(self, x):
@@ -396,6 +398,29 @@ class SENetPureThreeBase(nn.Module):
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
+        x = self.conv5(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        x = self.fc2(x)
+        return x
+    
+class SENetPureFourBase(nn.Module):
+    def __init__(self, d_out,d_channels):
+        super(SENetPureFourBase, self).__init__()
+        self.conv1 = ConvBlock(INPUT_CHANNELS, d_channels, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlock(d_channels, d_channels, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlock(d_channels, d_channels, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlock(d_channels, d_channels, kernel_size=3, stride=1, padding=1)
+        self.conv5 = ConvBlock(d_channels, d_channels, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(d_channels * 8 * 8, d_out)
+
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = self.conv5(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
@@ -573,26 +598,29 @@ class TransformerModel(nn.Module):
         return mask
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_embed, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
-        pe = torch.zeros(max_len, d_embed)
+        # Create a long enough `pe` to be sliced according to any input `x` up to `max_len`
+        pe = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
-        div_term = torch.exp(torch.arange(0, d_embed, 2).float() * (-math.log(10000.0) / d_embed))
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
+        pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        x = x + self.pe[:x.size(1)].transpose(0, 1)
+        # `x` is assumed to be of shape [batch_size, seq_length, d_model]
+        # Adjust `pe` to match the dimensions of `x`
+        x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
 
 
-class ChessTransformerBase(nn.Module):
+class ChessTransformer(nn.Module):
     def __init__(self, vocab, d_model, nhead, num_layers, max_seq_length=750, dropout=0.1):
-        super(ChessTransformerBase, self).__init__()
+        super(ChessTransformer, self).__init__()
         self.vocab = vocab
         self.d_model = d_model
         self.vocab_size = len(vocab.id_to_move.keys())
@@ -602,9 +630,162 @@ class ChessTransformerBase(nn.Module):
                                           num_encoder_layers=num_layers,
                                           num_decoder_layers=num_layers, 
                                           batch_first=True)
+        self.fc = nn.Linear(d_model, self.vocab_size)
         self.max_seq_length = max_seq_length
 
+    def forward(self, src, tgt):
 
+        # Create source padding mask
+        src_padding_mask = self.create_padding_mask(src).to(src.device)
+        tgt_padding_mask = self.create_padding_mask(tgt).to(tgt.device)
+        # Embedding and Positional Encoding for src
+
+        src_emb = self.embedding(src) * math.sqrt(self.d_model) # [batch_size, seq_len] -> [batch_size, seq_len, d_model]
+
+        src_emb = self.pos_encoder(src_emb).to(tgt.device)
+        
+        tgt_emb = self.embedding(tgt) * math.sqrt(self.d_model) # [batch_size, seq_len] -> [batch_size, seq_len, d_model]
+
+        tgt_emb = self.pos_encoder(tgt_emb).to(tgt.device)
+    
+        # Transformer
+        output = self.transformer(src_emb, tgt_emb, 
+                                  src_key_padding_mask=src_padding_mask, 
+                                  tgt_key_padding_mask=tgt_padding_mask,
+                                  tgt_is_causal = True,
+                                  src_is_causal = True, 
+                                  src_mask = self.square_subsequent_mask(src).to(src.device),
+                                  tgt_mask = self.square_subsequent_mask(tgt).to(tgt.device))
+        # Linear layer to predict vocab
+        output = self.fc(output)
+        return output
+    
+    def create_padding_mask(self, src):
+        PAD_IDX = 0
+        src_padding_mask = (src == PAD_IDX)
+        return src_padding_mask
+    
+    def square_subsequent_mask(self, tgt):
+        """
+        Generate a square mask for the sequence. The masked positions are filled with `True`.
+        This mask ensures that for any position `i` in `tgt`, the decoder's self-attention mechanism
+        can only attend to positions at or before `i`.
+        
+        Args:
+            tgt (Tensor): The target input tensor of shape [batch_size, tgt_len].
+        
+        Returns:
+            Tensor: A mask of shape [tgt_len, tgt_len] where `True` indicates that attention is not allowed.
+        """
+        # tgt_len could be derived from the second dimension of tgt
+        tgt_len = tgt.size(1)
+        
+        # Generate an upper triangular matrix with `True` in the upper triangle
+        mask = torch.triu(torch.ones((tgt_len, tgt_len), dtype=torch.bool), diagonal=1)
+        return mask
+    
+    def generate_sequence(self, src, src_length, start_symbol_id, sep_token_id, max_length=100):
+        """
+        Generate a sequence autoregressively using the trained transformer model.
+
+        Args:
+        - src (Tensor): The input source sequence tensor.
+        - src_length (Tensor): The length of the source sequence.
+        - start_symbol_id (int): The ID of the start symbol to begin generation.
+        - sep_token_id (int): The ID of the SEP token for sequence termination.
+        - max_length (int): Maximum length of the generated sequence to prevent infinite loops.
+
+        Returns:
+        - The generated sequence tensor.
+        """
+        self.eval()  # Ensure the model is in eval mode
+
+        # Initialize the target sequence with the start symbol
+        tgt = torch.tensor([start_symbol_id], dtype=torch.long).to(src.device)
+        
+        for _ in range(max_length):
+            # Assuming src_length is a tensor with the length of src. Adjust as needed.
+
+            # Perform a forward pass to get logits for the next token
+            logits = self.forward(src, src_length, tgt, src)
+            # Get the last token logits and apply softmax to get probabilities
+            probs = torch.softmax(logits[:, -1, :], dim=-1)
+            # get most likely token from probs
+            next_token = torch.max(probs, 1)
+            
+            # Append the predicted token to the target sequence
+            tgt = torch.cat((tgt, next_token), dim=1)
+            
+            # Check if the <SEP> token is generated
+            if next_token.item() == sep_token_id:
+                break
+
+        return tgt
+
+
+class ChessTransformerBase(nn.Module):
+    def __init__(self, vocab, d_model, nhead, num_layers, max_seq_length=750, dropout=0.1):
+        super(ChessTransformerBase, self).__init__()
+        self.vocab = vocab
+        self.d_model = d_model
+        self.vocab_size = len(vocab.id_to_move.keys())
+        self.embedding = nn.Embedding(self.vocab_size, d_model)
+        self.pos_encoder = PositionalEncoding(d_model, dropout=dropout, max_len=max_seq_length)
+        self.transformer = nn.Transformer(d_model=d_model, nhead=nhead,
+                                          num_encoder_layers=num_layers,
+                                          num_decoder_layers=num_layers, 
+                                          batch_first=True)
+        self.max_seq_length = max_seq_length
+
+    def forward(self, src, tgt):
+
+        # Create source padding mask
+        src_padding_mask = self.create_padding_mask(src).to(src.device)
+        tgt_padding_mask = self.create_padding_mask(tgt).to(tgt.device)
+        # Embedding and Positional Encoding for src
+
+        src_emb = self.embedding(src) * math.sqrt(self.d_model) # [batch_size, seq_len] -> [batch_size, seq_len, d_model]
+
+        src_emb = self.pos_encoder(src_emb).to(tgt.device)
+        
+        tgt_emb = self.embedding(tgt) * math.sqrt(self.d_model) # [batch_size, seq_len] -> [batch_size, seq_len, d_model]
+
+        tgt_emb = self.pos_encoder(tgt_emb).to(tgt.device)
+    
+        # Transformer
+        output = self.transformer(src_emb, tgt_emb, 
+                                  src_key_padding_mask=src_padding_mask, 
+                                  tgt_key_padding_mask=tgt_padding_mask,
+                                  tgt_is_causal = True,
+                                  src_is_causal = True, 
+                                  src_mask = self.square_subsequent_mask(src).to(src.device),
+                                  tgt_mask = self.square_subsequent_mask(tgt).to(tgt.device))
+        return output
+    
+    def create_padding_mask(self, src):
+        PAD_IDX = 0
+        src_padding_mask = (src == PAD_IDX)
+        return src_padding_mask
+    
+    def square_subsequent_mask(self, tgt):
+        """
+        Generate a square mask for the sequence. The masked positions are filled with `True`.
+        This mask ensures that for any position `i` in `tgt`, the decoder's self-attention mechanism
+        can only attend to positions at or before `i`.
+        
+        Args:
+            tgt (Tensor): The target input tensor of shape [batch_size, tgt_len].
+        
+        Returns:
+            Tensor: A mask of shape [tgt_len, tgt_len] where `True` indicates that attention is not allowed.
+        """
+        # tgt_len could be derived from the second dimension of tgt
+        tgt_len = tgt.size(1)
+        
+        # Generate an upper triangular matrix with `True` in the upper triangle
+        mask = torch.triu(torch.ones((tgt_len, tgt_len), dtype=torch.bool), diagonal=1)
+        return mask
+    
 class MultiModal(nn.Module):
     def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
         super().__init__()
@@ -760,12 +941,12 @@ class MultiModalNine(nn.Module):
         return pred
     
 class MultiModalTen(nn.Module):
-    def __init__(self, vocab, d_model, nhead, num_layers, d_out, max_seq_length=750, dropout=0.1, pretrained_transformer=None, pretrained_cnn = None):
+    def __init__(self, vocab, d_model, d_out, pretrained_transformer=None, pretrained_cnn = None, max_seq_length=750, dropout=0.5):
         super(MultiModalTen, self).__init__()
-        # Initialize the Transformer for Chess sequences
-        self.transformer = ChessTransformerBase(vocab, d_model, nhead, num_layers, max_seq_length, dropout)
-        # Initialize the SENet for image-like inputs (like a chess board)
-        self.cnn = SENetPureThreeBase(d_model)
+        num_layers = 4
+        nhead = 8
+        self.transformer = ChessTransformerBase(vocab, d_model, nhead, num_layers, max_seq_length)
+        self.cnn = SENetPureFourBase(d_model, 96)
         # Combined fully connected layers
         self.dense = nn.Sequential(
             nn.Dropout(dropout),
@@ -779,10 +960,9 @@ class MultiModalTen(nn.Module):
         if pretrained_cnn is not None:
             self.cnn.load_state_dict({name: param for name, param in pretrained_cnn.state_dict().items() if 'fc2' not in name})
 
-    def forward(self, src, tgt, img):
+    def forward(self, img, src):
         # Process sequences with the Transformer
-        transformer_output = self.transformer(src, tgt)
-        # Last state is used for prediction purposes
+        transformer_output = self.transformer(src, src)
         transformer_last_state = transformer_output[:, -1, :]
         
         # Process images with the SENet

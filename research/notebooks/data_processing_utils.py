@@ -209,7 +209,8 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
     # Initial Variables
     initial_size = 1000000  # Initial size of the arrays
     resize_factor = 2    # Factor by which to resize the arrays if needed
-    board_states = np.empty((initial_size,17,8,8), dtype=np.bool_)
+    if not sequential_only:
+        board_states = np.empty((initial_size,17,8,8), dtype=np.bool_)
     next_moves = np.empty(initial_size, dtype=int)
     subsequences, fens = [], []
     chess_board = chess.Board()
@@ -232,11 +233,11 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
                     if (not with_checkmate) and '#' in algebraic_move:
                         algebraic_move = algebraic_move[:-1] + '+'
                     chess_board.push(move_obj)
-                    vocab.add_move(algebraic_move)
+                    #vocab.add_move(algebraic_move)
                     encoded_move = vocab.get_id(algebraic_move)
                     encoded_moves.append(encoded_move)
                 else:
-                    vocab.add_move(move)
+                    #vocab.add_move(move)
                     encoded_move = vocab.get_id(move)
                     encoded_moves.append(encoded_move)
         del moves
@@ -263,6 +264,9 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
                     subsequences.append(subseq)
                     # Label
                     label = encoded_moves[i+1]
+                    if idx >= len(next_moves):  # Check if resize is needed
+                        new_size = len(next_moves) * resize_factor
+                        next_moves = np.resize(next_moves, new_size)
                     next_moves[idx] = label
                     idx += 1
                 else:
@@ -284,7 +288,8 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
                     
     # Cleanup
     del chess_board
-    board_states = np.array(board_states[:idx], dtype=np.bool_)
+    if not sequential_only:
+        board_states = np.array(board_states[:idx], dtype=np.bool_)
     next_moves = np.array(next_moves[:idx], dtype=int)
     
     if board_only:
