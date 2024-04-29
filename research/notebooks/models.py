@@ -7,7 +7,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-INPUT_CHANNELS = 17
+INPUT_CHANNELS = 12
 
 class ChessCNN(nn.Module):
     def __init__(self, d_out):

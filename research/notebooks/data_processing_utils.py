@@ -150,7 +150,7 @@ def df_to_multimodal_memmap(files, vocab, elo, sampling_rate = 0.125):
         df.to_csv(csv_filename, index=False)
     pass 
 
-def fen_to_array(string, board_only = False):
+def fen_to_array(string, board_only = False, color = 'both'):
     board = string.split(" ")[0]
     rows = board.split("/")
     parts = string.split(' ')
@@ -173,7 +173,7 @@ def fen_to_array(string, board_only = False):
     }
 
     # Adjusted to 12 to account for separate layers for black and white pieces of each type
-    channels = 12 if board_only else 17 
+    channels = 12 if (board_only or color != 'both') else 17 
     ans = [[[False for _ in range(8)] for _ in range(8)] for _ in range(channels)]
 
     for row in range(8):
@@ -188,7 +188,7 @@ def fen_to_array(string, board_only = False):
                 current_board[row][offset + piece] = True
                 ans[piece_to_index[curr_piece]] = current_board
     
-    if not board_only:
+    if not (board_only or color != 'both'):
         # Channel for the player to move (True if white's move, False if black's)
         ans[12] = [[True if parts[1] == 'w' else False for _ in range(8)] for _ in range(8)]
 
@@ -209,8 +209,12 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
     # Initial Variables
     initial_size = 1000000  # Initial size of the arrays
     resize_factor = 2    # Factor by which to resize the arrays if needed
+    if color != 'both':
+        CHANNELS = 12
+    else: 
+        CHANNELS = 17
     if not sequential_only:
-        board_states = np.empty((initial_size,17,8,8), dtype=np.bool_)
+        board_states = np.empty((initial_size,CHANNELS,8,8), dtype=np.bool_)
     next_moves = np.empty(initial_size, dtype=int)
     subsequences, fens = [], []
     chess_board = chess.Board()
@@ -249,9 +253,9 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
                     fens.append(boards[i])
                     if idx >= board_states.shape[0]:  # Check if resize is needed
                         new_size = board_states.shape[0] * resize_factor
-                        board_states = np.resize(board_states, (new_size, 17,8,8))
+                        board_states = np.resize(board_states, (new_size, CHANNELS,8,8))
                         next_moves = np.resize(next_moves, new_size)
-                    board_states[idx] = fen_to_array(boards[i])
+                    board_states[idx] = fen_to_array(boards[i], color)
                     #Label
                     label = encoded_moves[i+1]
                     next_moves[idx] = label
@@ -273,9 +277,9 @@ def df_to_data(df, vocab, board_only = False, sequential_only = False, color = '
                     fens.append(boards[i])
                     if idx >= board_states.shape[0]:  # Check if resize is needed
                         new_size = board_states.shape[0] * resize_factor
-                        board_states = np.resize(board_states, (new_size, 17,8,8))
+                        board_states = np.resize(board_states, (new_size, CHANNELS,8,8))
                         next_moves = np.resize(next_moves, new_size)
-                    board_states[idx] = fen_to_array(boards[i])
+                    board_states[idx] = fen_to_array(boards[i], color)
                     # Subsequence
                     subseq = encoded_moves[0 : i + 1]
                     if fixed_window and len(subseq) > fixed_window_size:
