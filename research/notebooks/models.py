@@ -425,6 +425,28 @@ class SENetPureFourBase(nn.Module):
         x = self.fc(x)
 
         return x
+
+class SENetPureFive(nn.Module):
+    def __init__(self, d_out):
+        super(SENetPureFive, self).__init__()
+        self.conv0 = nn.Conv2d(INPUT_CHANNELS, 72, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(72)
+        self.conv1 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv2 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv3 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.conv4 = ConvBlockTwo(72, 72, kernel_size=3, stride=1, padding=1)
+        self.fc = nn.Linear(72 * 8 * 8, d_out)
+
+
+    def forward(self, x):
+        x = F.relu(self.bn1(self.conv0(x)))
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
     
 class RNNModel(nn.Module):
     def __init__(
@@ -963,8 +985,17 @@ class MultiModalTen(nn.Module):
     def forward(self, img, src):
         # Process sequences with the Transformer
         transformer_output = self.transformer(src, src)
-        transformer_last_state = transformer_output[:, -1, :]
-        
+        # Check if your data contains zeros as padding, and modify 'greater(0)' if different padding
+        non_zero_mask = (src != 0) 
+        last_non_zero_indices = torch.where(
+            non_zero_mask.any(dim=1),
+            non_zero_mask.sum(dim=1) - 1,  # Last non-zero index
+            torch.tensor(0).to(src.device)  # Default to 0 if no non-zero found (edge case)
+        )
+
+        # Gather the last non-zero tokens for each sequence in the batch
+        transformer_last_state = transformer_output[torch.arange(transformer_output.size(0)), last_non_zero_indices]
+            
         # Process images with the SENet
         cnn_output = self.cnn(img)
         
@@ -974,3 +1005,63 @@ class MultiModalTen(nn.Module):
         result = self.dense(combined)
         
         return result
+
+class MultiModalEleven(nn.Module):
+    def __init__(self, vocab, d_model, d_out, pretrained_transformer=None, pretrained_cnn = None, max_seq_length=750, dropout=0.5):
+        super(MultiModalEleven, self).__init__()
+        num_layers = 4
+        nhead = 8
+        self.transformer = ChessTransformerBase(vocab, d_model, nhead, num_layers, max_seq_length)
+        self.cnn = SENetPureFourBase(d_model, 96)
+        # Combined fully connected layers
+        self.dense = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(d_model * 2, d_model * 2),  # Assuming d_model is greater or equal to d_out for simplicity
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model * 2, d_model * 2),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(d_model * 2, d_out),
+        )
+        if pretrained_transformer is not None:
+            self.transformer.load_state_dict({name: param for name, param in pretrained_transformer.state_dict().items() if 'fc' not in name})
+        if pretrained_cnn is not None:
+            self.cnn.load_state_dict({name: param for name, param in pretrained_cnn.state_dict().items() if 'fc2' not in name})
+
+    def forward(self, img, src):
+        # Process sequences with the Transformer
+        transformer_output = self.transformer(src, src)
+        # Check if your data contains zeros as padding, and modify 'greater(0)' if different padding
+        non_zero_mask = (src != 0) 
+        last_non_zero_indices = torch.where(
+            non_zero_mask.any(dim=1),
+            non_zero_mask.sum(dim=1) - 1,  # Last non-zero index
+            torch.tensor(0).to(src.device)  # Default to 0 if no non-zero found (edge case)
+        )
+
+        # Gather the last non-zero tokens for each sequence in the batch
+        transformer_last_state = transformer_output[torch.arange(transformer_output.size(0)), last_non_zero_indices]
+            
+        # Process images with the SENet
+        cnn_output = self.cnn(img)
+        
+        # Combine the outputs
+        combined = torch.cat((transformer_last_state, cnn_output), dim=1)
+        # Final prediction
+        result = self.dense(combined)
+        
+        return result
+    
+class MultiModalTwelve(nn.Module):
+    def __init__(self, vocab, d_embed, d_hidden, d_out, dropout=0.5) -> None:
+        super().__init__()
+        self.rnn = RNNModelTwo(vocab, d_embed, d_hidden, 512, dropout=dropout, bidirectional=True)
+        self.cnn = SENetPureFive(512)
+        self.fc = nn.Sequential(nn.Dropout(0.2), nn.Linear(1024, 1024), nn.ReLU(), nn.Dropout(0.2), nn.Linear(1024, d_out))
+
+    def forward(self, board, sequence, seq_lengths):
+        seq_encoding = self.rnn(sequence, seq_lengths)
+        cnn_encoding = self.cnn(board)
+        pred = self.fc(torch.cat((seq_encoding, cnn_encoding), dim=1))
+        return pred
