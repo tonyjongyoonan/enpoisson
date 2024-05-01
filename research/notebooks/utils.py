@@ -17,23 +17,100 @@ def top_3_accuracy(y_true, y_pred):
     correct = top3.eq(y_true.view(-1, 1).expand_as(top3))
     return correct.any(dim=1).float().mean().item()
 
+def get_embedding_matrix(vocab, d_embed):
+    n_embed = len(vocab.move_to_id)
+    return np.random.normal(0, 1, (n_embed, d_embed))
+
 """ Objects """
+
+class Vocabulary:
+    def __init__(self):
+        self.move_to_id = {"<UNK>": 0}
+        self.id_to_move = {0: "<UNK>"}
+        self.index = 1  # Start indexing from 1
+
+    def add_move(self, move):
+        if move not in self.move_to_id:
+            self.move_to_id[move] = self.index
+            self.id_to_move[self.index] = move
+            self.index += 1
+
+    def get_id(self, move):
+        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
+
+    def get_move(self, id):
+        return self.id_to_move.get(id, self.id_to_move[0])
+
+class VocabularyWithCLS:
+    def __init__(self):
+        self.move_to_id = {"<UNK>": 0, "CLS": 1}
+        self.id_to_move = {0: "<UNK>", 1: "CLS"}
+        self.index = 2  # Start indexing from 2
+
+    def add_move(self, move):
+        if move not in self.move_to_id:
+            self.move_to_id[move] = self.index
+            self.id_to_move[self.index] = move
+            self.index += 1
+
+    def get_id(self, move):
+        return self.move_to_id.get(move, self.move_to_id["<UNK>"])
+
+    def get_move(self, id):
+        return self.id_to_move.get(id, self.id_to_move[0])
+
+class VocabularyForTransformer:
+    def __init__(self):
+        self.word_to_id = {"<PAD>": 0, "<START>": 1, "<BOARD>": 2, "<MOVE>": 3, "<SEP>": 4, "<CLS>": 5}
+        self.id_to_word = {0: "<PAD>", 1: "<START>", 2: "<BOARD>", 3: "<MOVE>", 4: "<SEP>", 5: "<CLS>"}
+        self.num_words = 5
+
+    def add_move(self, word):
+        if word not in self.word_to_id:
+            self.word_to_id[word] = self.num_words
+            self.id_to_word[self.num_words] = word
+            self.num_words += 1
+
+    def get_id(self, word):
+        return self.word_to_id.get(word, None)
+
+    def get_word(self, word_id):
+        return self.id_to_word.get(word_id, None)
         
-class ChessDataset(Dataset):
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
+class CNNDataset(Dataset):
+    def __init__(self, boards, fens, labels):
+        self.boards = boards
+        self.fens = fens
+        self.labels = labels
 
     def __len__(self):
-        return len(self.X)
+        return len(self.boards)
 
     def __getitem__(self, idx):
-        features, label = self.X[idx], self.Y[idx]
-
-        return torch.tensor(features, dtype=torch.float32), torch.tensor(
-            label, dtype=torch.long
+        return (
+            torch.tensor(self.boards[idx], dtype=torch.bool).float(),
+            self.fens[idx],
+            torch.tensor(self.labels[idx], dtype=torch.long),
         )
 
+
+class SequenceDataset(Dataset):
+    def __init__(self, sequences, fens, lengths, labels):
+        self.sequences = sequences
+        self.lengths = lengths
+        self.fens = fens
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        return (torch.tensor(self.sequences[idx], dtype=torch.long), 
+                self.fens[idx],
+                torch.tensor(self.lengths[idx], dtype=torch.long), 
+                torch.tensor(self.labels[idx], dtype=torch.long)
+        )
+    
 class MultimodalDataset(Dataset):
     def __init__(self, sequences, boards, lengths, labels):
         self.sequences = sequences

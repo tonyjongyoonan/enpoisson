@@ -6,7 +6,7 @@ import chess
 import pandas as pd
 import random
 import numpy as np
-import dask.dataframe as dd 
+#import dask.dataframe as dd 
 
 """ This vocabulary is simply to turn the labels (predicted move) into integers which PyTorch Models can understand"""
 
@@ -138,7 +138,7 @@ def df_to_multimodal_memmap(files, vocab, elo, sampling_rate = 0.125):
     for file in files:
         df = pd.read_csv(file)
         folder_name = file.split('-')[1].split('.')[0]
-        trainX, fens, trainX_sequences, trainY, vocab = df_to_multimodal_data(df, vocab, fixed_window=True, sampling_rate=sampling_rate)
+        trainX, fens, trainX_sequences, trainY, vocab = df_to_data(df, vocab, sampling_rate=sampling_rate)
         trainX_sequences, trainX_seqlengths  = pad_sequences(trainX_sequences)
         trainX_filenames.append(save_as_memmap(trainX, f'./../data/{elo}/{folder_name}/trainX.memmap'))
         trainY_filenames.append(save_as_memmap(trainY, f'./../data/{elo}/{folder_name}/trainY.memmap'))
@@ -150,81 +150,11 @@ def df_to_multimodal_memmap(files, vocab, elo, sampling_rate = 0.125):
         df.to_csv(csv_filename, index=False)
     pass 
 
-def fen_to_array(string):
-    piece_to_index = {
-        "p": 0,
-        "r": 1,
-        "b": 2,
-        "n": 3,
-        "q": 4,
-        "k": 5,
-    }
-    rows = string.split("/")
-    ans = [[[0 for a in range(8)] for b in range(8)] for c in range(6)]
-    for row in range(8):
-        curr_row = rows[row]
-        # print(curr_row)
-        offset = 0
-        for piece in range(len(curr_row)):
-            curr_piece = curr_row[piece]
-            sign = (
-                1 if curr_piece.lower() == curr_piece else -1
-            )  # check if the piece is capitalized
-            curr_piece = (
-                curr_piece.lower()
-            )  # after storing whether or not capitalized, standardize it to lower case for easy processing
-            if curr_piece not in piece_to_index.keys():
-                offset += int(curr_piece) - 1
-            else:
-                current_board = ans[piece_to_index[curr_piece]]
-                current_board[row][offset + piece] = 1 * sign
-                ans[piece_to_index[curr_piece]] = current_board
-    return ans
-
-
-def fen_to_array_two(string):
-    rows = string.split("/")
-    # Adjusted to 12 to account for separate layers for black and white pieces of each type
-    ans = [[[0 for a in range(8)] for b in range(8)] for c in range(12)]
-    # Mapping for pieces to their respective index in the 12 layer array
-    # White pieces are in the first 6 layers and black pieces in the last 6 layers
-    piece_to_index = {
-        "p": 0,
-        "r": 1,
-        "n": 2,
-        "b": 3,
-        "q": 4,
-        "k": 5,
-        "P": 6,
-        "R": 7,
-        "N": 8,
-        "B": 9,
-        "Q": 10,
-        "K": 11,
-    }
-
-    for row in range(8):
-        curr_row = rows[row]
-        offset = 0
-        for piece in range(len(curr_row)):
-            curr_piece = curr_row[piece]
-            if curr_piece not in piece_to_index.keys():
-                offset += int(curr_piece) - 1
-            else:
-                current_board = ans[piece_to_index[curr_piece]]
-                current_board[row][offset + piece] = 1
-                ans[piece_to_index[curr_piece]] = current_board
-    # channels 13-20 are for the last 8 moves?
-    # channels 21-22 is for castles
-
-    return ans
-
-def fen_to_array_three(string):
+def fen_to_array(string, board_only = False, color = 'both'):
     board = string.split(" ")[0]
     rows = board.split("/")
     parts = string.split(' ')
-    # Adjusted to 17 to account for separate layers for black and white pieces of each type
-    ans = [[[False for _ in range(8)] for _ in range(8)] for _ in range(17)]
+    
     # Mapping for pieces to their respective index in the 12 layer array
     # White pieces are in the first 6 layers and black pieces in the last 6 layers
     piece_to_index = {
@@ -241,6 +171,10 @@ def fen_to_array_three(string):
         "Q": 10,
         "K": 11,
     }
+
+    # Adjusted to 12 to account for separate layers for black and white pieces of each type
+    channels = 12 if (board_only or color != 'both') else 17 
+    ans = [[[False for _ in range(8)] for _ in range(8)] for _ in range(channels)]
 
     for row in range(8):
         curr_row = rows[row]
@@ -253,79 +187,46 @@ def fen_to_array_three(string):
                 current_board = ans[piece_to_index[curr_piece]]
                 current_board[row][offset + piece] = True
                 ans[piece_to_index[curr_piece]] = current_board
-    # Channel for the player to move (True if white's move, False if black's)
-    ans[12] = [[True if parts[1] == 'w' else False for _ in range(8)] for _ in range(8)]
+    
+    if not (board_only or color != 'both'):
+        # Channel for the player to move (True if white's move, False if black's)
+        ans[12] = [[True if parts[1] == 'w' else False for _ in range(8)] for _ in range(8)]
 
-    # Castling rights
-    castling = parts[2]
-    ans[13] = [[True if 'K' in castling else False for _ in range(8)] for _ in range(8)]
-    ans[14] = [[True if 'Q' in castling else False for _ in range(8)] for _ in range(8)]
-    ans[15] = [[True if 'k' in castling else False for _ in range(8)] for _ in range(8)]
-    ans[16] = [[True if 'q' in castling else False for _ in range(8)] for _ in range(8)]
-
+        # Castling rights
+        castling = parts[2]
+        ans[13] = [[True if 'K' in castling else False for _ in range(8)] for _ in range(8)]
+        ans[14] = [[True if 'Q' in castling else False for _ in range(8)] for _ in range(8)]
+        ans[15] = [[True if 'k' in castling else False for _ in range(8)] for _ in range(8)]
+        ans[16] = [[True if 'q' in castling else False for _ in range(8)] for _ in range(8)]
+    
     return ans
 
-def df_to_data_board_only(df, vocab, sampling_rate=1.0, algebraic_notation=True):
+def df_to_data(df, vocab, board_only = False, sequential_only = False, color = 'both', fixed_window=True, fixed_window_size=16, sampling_rate=.125, algebraic_notation=True, with_checkmate=True):
     """
     Input: Dataframe of training data in which each row represents a full game played between players
     Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
     """
-    if vocab is None: 
-        vocab = VocabularyWithCLS()
-    board_states = []
-    next_moves = []
-    fens = []
+    # Initial Variables
+    initial_size = 1000000  # Initial size of the arrays
+    resize_factor = 2    # Factor by which to resize the arrays if needed
+    if color != 'both':
+        CHANNELS = 12
+    else: 
+        CHANNELS = 17
+    if not sequential_only:
+        board_states = np.empty((initial_size,CHANNELS,8,8), dtype=np.bool_)
+    next_moves = np.empty(initial_size, dtype=int)
+    subsequences, fens = [], []
     chess_board = chess.Board()
-    for game_board, game_moves in zip(df["board"], df["moves"]):
-        moves = game_moves.split()
-        boards = game_board.split("*")
-        # Encode the moves into SAN notation and then into corresponding indices
-        encoded_moves = []
-        for move in moves:
-            # Create a move object from the coordinate notation
-            move_obj = chess.Move.from_uci(move)
-            if algebraic_notation and (move_obj not in chess_board.legal_moves):
-                break
-            else:
-                if algebraic_notation:
-                    algebraic_move = chess_board.san(move_obj)
-                    chess_board.push(move_obj)
-                    vocab.add_move(algebraic_move)
-                    encoded_move = vocab.get_id(algebraic_move)
-                    encoded_moves.append(encoded_move)
-                else:
-                    vocab.add_move(move)
-                    encoded_move = vocab.get_id(move)
-                    encoded_moves.append(encoded_move)
-        if algebraic_notation:
-            chess_board.reset()
-        del moves
-        boards = boards[: len(encoded_moves)]
-        # Now generate X,Y with sampling
-        for i in range(len(encoded_moves) - 1):
-            # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate:
-                label = encoded_moves[i + 1]
-                fens.append(boards[i])
-                board_states.append(fen_to_array_three(boards[i]))
-                next_moves.append(label)
-    del chess_board
-    return np.asarray(board_states,dtype=np.bool_), fens, np.asarray(next_moves), vocab
-
-def df_to_multimodal_data(df, vocab, fixed_window=False, fixed_window_size=16, sampling_rate=1, algebraic_notation=True):
-    """
-    Input: Dataframe of training data in which each row represents a full game played between players
-    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
-    """
-    board_states, fens, subsequences, next_moves = [], [], [], []
-    chess_board = chess.Board()
+    idx = 0
+    
+    # Parse through Dataframe
     for game_board, game_moves in zip(df["board"], df["moves"]):
         moves = game_moves.split()
         boards = game_board.split("*")
         # Encode the moves into SAN notation and then into corresponding indices
         encoded_moves = [1]
         for move in moves:
-            # Create a move object from the coordinate notation
             move_obj = chess.Move.from_uci(move)
             # There are some broken moves in the data -> stop reading if so
             if move_obj not in chess_board.legal_moves:
@@ -333,138 +234,74 @@ def df_to_multimodal_data(df, vocab, fixed_window=False, fixed_window_size=16, s
             else:
                 if algebraic_notation:
                     algebraic_move = chess_board.san(move_obj)
+                    if (not with_checkmate) and '#' in algebraic_move:
+                        algebraic_move = algebraic_move[:-1] + '+'
                     chess_board.push(move_obj)
-                    vocab.add_move(algebraic_move)
+                    #vocab.add_move(algebraic_move)
                     encoded_move = vocab.get_id(algebraic_move)
                     encoded_moves.append(encoded_move)
                 else:
-                    vocab.add_move(move)
+                    #vocab.add_move(move)
                     encoded_move = vocab.get_id(move)
                     encoded_moves.append(encoded_move)
+        del moves
         chess_board.reset()
-        # at this point, encoded moves is [1,2,23,5,...]
-        # boards = boards[: len(encoded_moves)-1]
         # Now generate X,Y with sampling
         for i in range(0,len(encoded_moves)-1):
-            # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate and "w" in boards[i]:
-                # Board
-                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
-                fens.append(boards[i])
-                # Sequence of Moves
-                subseq = encoded_moves[0 : i + 1]
-                if fixed_window and len(subseq) > fixed_window_size:
-                    subseq = subseq[-fixed_window_size:]
-                subsequences.append(subseq)
-                # Label
-                label = encoded_moves[i+1]
-                next_moves.append(label)
-    return np.asarray(subsequences), fens, np.asarray(board_states,dtype=np.bool), np.asarray(next_moves), vocab
-
-def df_to_data_board_only_np(df, vocab, sampling_rate=1.0, algebraic_notation=True):
-    if vocab is None: 
-        vocab = VocabularyWithCLS()
-    initial_size = 1024  # Initial size of the arrays
-    resize_factor = 2    # Factor by which to resize the arrays if needed
-    board_states = np.empty((initial_size, 8, 8, 12), dtype=np.bool_)
-    next_moves = np.empty(initial_size, dtype=int)
-    fens = []
-    chess_board = chess.Board()
-    idx = 0  # Current index to insert data
+            if random.uniform(0, 1) <= sampling_rate and (color == 'both' or color in boards[i]):
+                if board_only:
+                    fens.append(boards[i])
+                    if idx >= board_states.shape[0]:  # Check if resize is needed
+                        new_size = board_states.shape[0] * resize_factor
+                        board_states = np.resize(board_states, (new_size, CHANNELS,8,8))
+                        next_moves = np.resize(next_moves, new_size)
+                    board_states[idx] = fen_to_array(boards[i], color)
+                    #Label
+                    label = encoded_moves[i+1]
+                    next_moves[idx] = label
+                    idx += 1
+                elif sequential_only:
+                    fens.append(boards[i])
+                    subseq = encoded_moves[0 : i + 1]
+                    if fixed_window and len(subseq) > fixed_window_size:
+                        subseq = subseq[-fixed_window_size:]
+                    subsequences.append(subseq)
+                    # Label
+                    label = encoded_moves[i+1]
+                    if idx >= len(next_moves):  # Check if resize is needed
+                        new_size = len(next_moves) * resize_factor
+                        next_moves = np.resize(next_moves, new_size)
+                    next_moves[idx] = label
+                    idx += 1
+                else:
+                    fens.append(boards[i])
+                    if idx >= board_states.shape[0]:  # Check if resize is needed
+                        new_size = board_states.shape[0] * resize_factor
+                        board_states = np.resize(board_states, (new_size, CHANNELS,8,8))
+                        next_moves = np.resize(next_moves, new_size)
+                    board_states[idx] = fen_to_array(boards[i], color)
+                    # Subsequence
+                    subseq = encoded_moves[0 : i + 1]
+                    if fixed_window and len(subseq) > fixed_window_size:
+                        subseq = subseq[-fixed_window_size:]
+                    subsequences.append(subseq)
+                    # Label
+                    label = encoded_moves[i+1]
+                    next_moves[idx] = label
+                    idx += 1
+                    
+    # Cleanup
+    del chess_board
+    if not sequential_only:
+        board_states = np.array(board_states[:idx], dtype=np.bool_)
+    next_moves = np.array(next_moves[:idx], dtype=int)
     
-    for game_board, game_moves in zip(df["board"], df["moves"]):
-        moves = game_moves.split()
-        boards = game_board.split("*")
-        encoded_moves = []
-        for move in moves:
-            move_obj = chess.Move.from_uci(move)
-            if algebraic_notation and (move_obj not in chess_board.legal_moves):
-                break
-            else:
-                if algebraic_notation:
-                    algebraic_move = chess_board.san(move_obj)
-                    chess_board.push(move_obj)
-                    vocab.add_move(algebraic_move)
-                    encoded_move = vocab.get_id(algebraic_move)
-                else:
-                    vocab.add_move(move)
-                    encoded_move = vocab.get_id(move)
-                encoded_moves.append(encoded_move)
-        if algebraic_notation:
-            chess_board.reset()
-        
-        boards = boards[:len(encoded_moves)]
-        for i in range(len(encoded_moves) - 1):
-            if random.uniform(0, 1) <= sampling_rate:
-                label = encoded_moves[i + 1]
-                fens.append(boards[i])
-                if idx >= board_states.shape[0]:  # Check if resize is needed
-                    new_size = board_states.shape[0] * resize_factor
-                    board_states = np.resize(board_states, (new_size, 8, 8, 12))
-                    next_moves = np.resize(next_moves, new_size)
-                board_states[idx] = fen_to_array_three(boards[i])
-                next_moves[idx] = label
-                idx += 1
-
-    # Efficiently resize to the final size by creating new arrays
-    board_states_final = np.array(board_states[:idx], dtype=np.bool_)
-    next_moves_final = np.array(next_moves[:idx], dtype=int)
-
-    del chess_board, board_states, next_moves  # Clean up original arrays
-    return board_states_final, fens, next_moves_final, vocab
-
-def df_to_multimodal_data_color(df, vocab, color = 'w', fixed_window=False, fixed_window_size=16, sampling_rate=1, algebraic_notation=True):
-    """
-    Input: Dataframe of training data in which each row represents a full game played between players
-    Output: List in which each item represents some game's history up until a particular move, List in the same order in which the associated label is the following move
-    """
-    if vocab is None: 
-        vocab = VocabularyWithCLS()
-
-    board_states, fens, subsequences, next_moves = [], [], [], []
-    chess_board = chess.Board()
-    for game_board, game_moves in zip(df["board"], df["moves"]):
-        moves = game_moves.split()
-        boards = game_board.split("*")
-        # Encode the moves into SAN notation and then into corresponding indices
-        encoded_moves = [1]
-        for move in moves:
-            # Create a move object from the coordinate notation
-            move_obj = chess.Move.from_uci(move)
-            # There are some broken moves in the data -> stop reading if so
-            if move_obj not in chess_board.legal_moves:
-                break
-            else:
-                if algebraic_notation:
-                    algebraic_move = chess_board.san(move_obj)
-                    chess_board.push(move_obj)
-                    vocab.add_move(algebraic_move)
-                    encoded_move = vocab.get_id(algebraic_move)
-                    encoded_moves.append(encoded_move)
-                else:
-                    vocab.add_move(move)
-                    encoded_move = vocab.get_id(move)
-                    encoded_moves.append(encoded_move)
-        chess_board.reset()
-        # at this point, encoded moves is [1,2,23,5,...]
-        # boards = boards[: len(encoded_moves)-1]
-        # Now generate X,Y with sampling
-        for i in range(len(encoded_moves)-1):
-            # TODO: Figure out how to deal with black orientation 'seeing' a different board
-            if random.uniform(0, 1) <= sampling_rate and (color in boards[i].split(" ")[1]):
-                # Board
-                board_states.append(fen_to_array_two(boards[i].split(" ")[0]))
-                fens.append(boards[i])
-                # Sequence of Moves
-                subseq = encoded_moves[0 : i + 1]
-                if fixed_window and len(subseq) > fixed_window_size:
-                    subseq = subseq[-fixed_window_size:]
-                subsequences.append(subseq)
-                # Label
-                label = encoded_moves[i+1]
-                next_moves.append(label)
-        del chess_board
-    return np.asarray(subsequences), fens, np.asarray(board_states,dtype=np.bool_), next_moves, vocab
+    if board_only:
+        return board_states, fens, next_moves, vocab
+    elif sequential_only:
+        return subsequences, fens, next_moves, vocab
+    else:
+        return subsequences, fens, board_states, next_moves, vocab
 
 def df_to_data_fen_only(df, vocab, fixed_window=False, fixed_window_size=8, sampling_rate=1, algebraic_notation=True):
     if vocab is None:
@@ -531,7 +368,6 @@ def df_to_data_fen_only(df, vocab, fixed_window=False, fixed_window_size=8, samp
 
     return subsequences, next_moves, vocab
 
-
 def expand_fen(fen):
     """
     Expands a FEN string into a fixed-length format by expanding the shorthand notations.
@@ -580,8 +416,7 @@ def pad_sequences(sequences, max_len=None, pad_id=0):
         sequence_lengths[i] = length
     return padded_sequences, sequence_lengths
 
-    """Turning Data into Memmaps
-    """
+"""Turning Data into Memmaps"""
     
 def save_as_memmap(array, filename):
     # Determine the dtype and shape of the array to create a compatible memmap
