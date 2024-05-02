@@ -135,6 +135,8 @@ def get_difficulty(position: Difficulty):
     stockfish_top_5_not_none = [
         move for move in stockfish_top_5 if move["Centipawn"] is not None
     ]
+    turn = chess.WHITE if position.is_white_move else chess.BLACK
+
     moves_uci = [move["Move"] for move in stockfish_top_5_not_none]
     evals = [int(move["Centipawn"]) / 100.0 for move in stockfish_top_5_not_none]
     moves_san = [chess_board.san(chess.Move.from_uci(move)) for move in moves_uci]
@@ -146,6 +148,8 @@ def get_difficulty(position: Difficulty):
     probabilities_zeroed = np.array([x if x is not None else 0 for x in probabilities])
     scaled_evals = np.array(evals) / 0.9
     result = 1 / (1 + np.exp(-scaled_evals))
+    if turn == chess.BLACK:
+        result = 1 - result
     sum_x = np.sum(result)
     normalized_result = result / sum_x
     return {
