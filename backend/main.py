@@ -145,11 +145,11 @@ def get_difficulty(position: Difficulty):
     
     
 
-    if check_hanging(chess_board, turn):
-        if turn == chess.WHITE:
-            evals[0] = (evals[1] + evals[2] + evals[3] + evals[4]) / 4
-        else:
-            evals[4] = (evals[1] + evals[2] + evals[3] + evals[0]) / 4
+    # if check_hanging(chess_board, turn):
+    #     if turn == chess.WHITE:
+    #         evals[0] = (evals[1] + evals[2] + evals[3] + evals[4]) / 4.0
+    #     else:
+    #         evals[4] = (evals[1] + evals[2] + evals[3] + evals[0]) / 4.0
 
 
     moves_san = [chess_board.san(chess.Move.from_uci(move)) for move in moves_uci]
@@ -165,9 +165,14 @@ def get_difficulty(position: Difficulty):
         result = 1 - result
     sum_x = np.sum(result)
     normalized_result = result / sum_x
+
+    adj_diff = 0.02
+    if not check_hanging(chess_board, turn):
+        adj_diff = np.dot(normalized_result, probabilities_zeroed)
+
     return {
         "eval": eval_str,
-        "difficulty": np.dot(normalized_result, probabilities_zeroed),
+        "difficulty": adj_diff,
         "stockfish_move": stockfish_move,
     }
 
