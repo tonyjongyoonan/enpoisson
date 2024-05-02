@@ -172,7 +172,7 @@ def get_difficulty(position: Difficulty):
     return {
         "eval": eval_str,
         "difficulty": adj_diff,
-        "stockfish_move": stockfish_move,
+        "stockfish_move": moves_san[0],
     }
 
 
