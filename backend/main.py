@@ -142,11 +142,14 @@ def get_difficulty(position: Difficulty):
 
     moves_uci = [move["Move"] for move in stockfish_top_5_not_none]
     evals = [int(move["Centipawn"]) / 100.0 for move in stockfish_top_5_not_none]
-    # sort evals in descending order
-    evals = sorted(evals, reverse=True)
+    
+    
 
     if check_hanging(chess_board, turn):
-        evals[0] = (evals[1] + evals[2] + evals[3] + evals[4]) / 4
+        if turn == chess.WHITE:
+            evals[0] = (evals[1] + evals[2] + evals[3] + evals[4]) / 4
+        else:
+            evals[4] = (evals[1] + evals[2] + evals[3] + evals[0]) / 4
 
 
     moves_san = [chess_board.san(chess.Move.from_uci(move)) for move in moves_uci]
