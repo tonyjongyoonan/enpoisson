@@ -125,6 +125,7 @@ def get_difficulty(position: Difficulty):
     chess_board = chess.Board(position.fen)
     # each move is a dictionary with keys "Move", "Centipawn", "Mate"
     stockfish_top_5 = stockfish.get_top_moves(5)
+    stockfish_move = stockfish.get_best_move()
     eval = stockfish.get_evaluation()
     if eval["type"] == "mate":
         num_moves = eval["value"]
@@ -155,6 +156,7 @@ def get_difficulty(position: Difficulty):
     return {
         "eval": eval_str,
         "difficulty": np.dot(normalized_result, probabilities_zeroed),
+        "stockfish_move": stockfish_move,
     }
 
 
