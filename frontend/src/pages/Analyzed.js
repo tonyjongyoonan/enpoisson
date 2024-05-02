@@ -157,32 +157,8 @@ const Analyzed = () => {
       });
       const data = await response.json();
       const returned_moves = Object.keys(data);
-      const probabilities = Object.values(data);
-      const sumProb = probabilities.reduce((a, b) => a + b, 0);
-      for (let i = 0; i < probabilities.length; i++) {
-        probabilities[i] /= sumProb;
-      }
-      console.log(returned_moves);
-      console.log(probabilities);
-      console.log(chess.current.fen());
-      const threshold = Math.random();
-      console.log("threshold: " + threshold);
-      let runningProb = probabilities[0];
-      let selectedMove = null;
-      for (let i = 0; i < returned_moves.length; i++) {
-        console.log("runningProb: " + runningProb);
-        if (runningProb > threshold) {
-          selectedMove = returned_moves[i];
-          break;
-        }
-        runningProb += probabilities[i + 1];
-      }
 
-      if (selectedMove) {
-        setRecMove(selectedMove);
-      } else {
-        console.log('error: no move selected');
-      }
+      setRecMove(returned_moves[0]);
     } catch (error) {
       console.log(error);
     }
