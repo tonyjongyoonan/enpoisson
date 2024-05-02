@@ -94,6 +94,7 @@ const Play = () => {
         console.log('error: no move selected');
       }
     } catch (error) {
+      playRandomMove();
       console.log(error);
     }
   }

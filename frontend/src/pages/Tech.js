@@ -25,9 +25,7 @@ const Tech = () => {
                 <p style={{ marginBottom: '1.5rem' }}></p>
                 <p>As a comparison, we looked at how depth-limited Stockfish and Maia do on the same prediction task.</p>
                 <p style={{ marginBottom: '1.5rem' }}></p>
-                <p> The median accuracy for Stockfish is at 0.35, Maia at 0.475, and for En Poisson, at 0.60.</p>
-                <p style={{ marginBottom: '1.5rem' }}></p>
-                <p>This makes En Poisson's Engine the State-of-the-Art (SOTA) model.</p>
+                <p> The median accuracy for Stockfish is at 0.35, Maia at 0.52, and for En Poisson, at 0.50.</p>
                 </div>
             </div>
     );
