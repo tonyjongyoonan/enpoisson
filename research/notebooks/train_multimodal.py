@@ -42,9 +42,10 @@ def train_with_fen(device, model, train_loader, val_loader, criterion, optimizer
             training_loss += loss.item()
             _, predicted = torch.max(output.data, 1)
             train_total += labels.size(0)
-            train_correct += (predicted == labels).sum().item()
+            batch_correct = (predicted == labels).sum().item()
+            train_correct += batch_correct
             if count % 1000 == 0:
-                print(f'Epoch {epoch+1}, Batch: {count}| Training Loss: {training_loss/count}')
+                print(f'Epoch {epoch+1}, Batch: {count}| Training Loss: {loss.item()} | Training Error: {batch_correct/labels.size(0)}')
         # Validation
         model.eval()
         val_correct = 0
@@ -133,8 +134,8 @@ dataset = MultimodalDatasetWithFEN(trainX_sequences, trainX, trainX_seqlengths, 
 total_size = len(dataset)
 
 # We're scaling the model size so let's bring in more data as well
-train_size = int(0.9998 * total_size)
-val_size = int(total_size * 0.0001)
+train_size = int(0.99995 * total_size)
+val_size = int(total_size * 0.00004)
 
 # Create subsets for training and validation
 train_dataset = Subset(dataset, range(0, train_size))
@@ -142,29 +143,31 @@ val_dataset = Subset(dataset, range(train_size, train_size + val_size))
         
 # Reload the data with particular batch size
 torch.multiprocessing.set_start_method('fork', force=True)
-batch_size = 128
+batch_size = 256
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=6, pin_memory=True)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_workers=6,pin_memory=True)
 
 # Initialize model, loss function, and optimizer
 d_hidden = 256
 d_embed = 64
-NUM_EPOCHS = 10
+NUM_EPOCHS = 4
 d_out = len(vocab.id_to_move.keys())
 model = MultiModalSeven(vocab,d_embed,d_hidden,d_out) 
 model = model.to(device)
 criterion = FocalLoss(gamma=2, alpha=1, reduction='mean')
-lr = 1e-3 * 0.8 * 0.8 * 0.8
-weight_decay=1e-7
-learn_decay = 0.8 # 
+lr = 1e-3
+weight_decay=1e-8
+learn_decay = 0.5 # 
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-model.load_state_dict(torch.load('model_images/multimodalmodel-exp-12-white-1500-checkpoint-start.pth'))
+model.load_state_dict(torch.load('model_images/multimodalmodel-exp-12-white-1500-checkpoint-9.pth'))
 
 print(count_parameters(model))
+
+model.compile()
 
 train_error,train_loss_values, val_error, val_loss_value = train_with_fen(device, 
                                                                           model, 
@@ -174,7 +177,7 @@ train_error,train_loss_values, val_error, val_loss_value = train_with_fen(device
                                                                           optimizer, 
                                                                           NUM_EPOCHS, 
                                                                           learn_decay,
-                                                                          '12-white-1500')
+                                                                          '12-white-1500-second')
 
 
 model.eval()
