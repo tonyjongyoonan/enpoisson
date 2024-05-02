@@ -166,7 +166,7 @@ def get_difficulty(position: Difficulty):
     sum_x = np.sum(result)
     normalized_result = result / sum_x
 
-    adj_diff = 0.02
+    adj_diff = np.random.uniform(0, 0.04)
     if not check_hanging(chess_board, other_turn):
         adj_diff = np.dot(normalized_result, probabilities_zeroed)
 
