@@ -138,6 +138,7 @@ def get_difficulty(position: Difficulty):
         move for move in stockfish_top_5 if move["Centipawn"] is not None
     ]
     turn = chess.WHITE if position.is_white_move else chess.BLACK
+    other_turn = chess.BLACK if turn == chess.WHITE else chess.WHITE
 
     moves_uci = [move["Move"] for move in stockfish_top_5_not_none]
     evals = [int(move["Centipawn"]) / 100.0 for move in stockfish_top_5_not_none]
@@ -166,7 +167,7 @@ def get_difficulty(position: Difficulty):
     normalized_result = result / sum_x
 
     adj_diff = 0.02
-    if not check_hanging(chess_board, turn):
+    if not check_hanging(chess_board, other_turn):
         adj_diff = np.dot(normalized_result, probabilities_zeroed)
 
     return {
