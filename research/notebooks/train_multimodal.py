@@ -155,7 +155,7 @@ d_out = len(vocab.id_to_move.keys())
 model = MultiModalSeven(vocab,d_embed,d_hidden,d_out) 
 model = model.to(device)
 criterion = FocalLoss(gamma=2, alpha=1, reduction='mean')
-lr = 1e-3
+lr = 1e-4
 weight_decay=1e-8
 learn_decay = 0.5 # 
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -163,11 +163,9 @@ optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-model.load_state_dict(torch.load('model_images/multimodalmodel-exp-12-white-1500-checkpoint-9.pth'))
+model.load_state_dict(torch.load('model_images/multimodalmodel-exp-12-white-1500-second-checkpoint-3.pth'))
 
 print(count_parameters(model))
-
-model.compile()
 
 train_error,train_loss_values, val_error, val_loss_value = train_with_fen(device, 
                                                                           model, 
@@ -177,7 +175,7 @@ train_error,train_loss_values, val_error, val_loss_value = train_with_fen(device
                                                                           optimizer, 
                                                                           NUM_EPOCHS, 
                                                                           learn_decay,
-                                                                          '12-white-1500-second')
+                                                                          '12-white-1500-third')
 
 
 model.eval()
