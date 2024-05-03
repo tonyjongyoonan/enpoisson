@@ -111,22 +111,22 @@ fens = pd.read_csv('../data/1500/black/fens.csv')['fens']
 
 # For trainX
 dtype_trainX = np.bool_  # or the correct dtype for your data
-shape_trainX = (26689923, 12,8,8)  # replace with the correct shape
+shape_trainX = (18568313, 12,8,8)  # replace with the correct shape
 trainX = load_memmap('./../data/1500/black/trainX_boards.memmap', dtype_trainX, shape_trainX)
 
 # For trainY
 dtype_trainY = np.int64 # or the correct dtype for your data
-shape_trainY = (26689923,)  # replace with the correct shape
+shape_trainY = (18568313,)  # replace with the correct shape
 trainY = load_memmap('./../data/1500/black/trainY.memmap', dtype_trainY, shape_trainY)
 
 # For trainY
 dtype_trainX_seqlengths = np.int64 # or the correct dtype for your data
-shape_trainX_seqlengths = (26689923,)  # replace with the correct shape
+shape_trainX_seqlengths = (18568313,)  # replace with the correct shape
 trainX_seqlengths = load_memmap('./../data/1500/black/trainX_seqlengths.memmap', dtype_trainX_seqlengths, shape_trainX_seqlengths)
 
 # For trainY
 dtype_trainX_sequences = np.int64 # or the correct dtype for your data
-shape_trainX_sequences = (26689923, 16)  # replace with the correct shape
+shape_trainX_sequences = (18568313, 16)  # replace with the correct shape
 trainX_sequences = load_memmap('./../data/1500/black/trainX_sequences.memmap', dtype_trainX_sequences, shape_trainX_sequences)
 
 dataset = MultimodalDatasetWithFEN(trainX_sequences, trainX, trainX_seqlengths, fens, trainY)
@@ -150,14 +150,14 @@ val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=True, num_wo
 # Initialize model, loss function, and optimizer
 d_hidden = 256
 d_embed = 64
-NUM_EPOCHS = 10
+NUM_EPOCHS = 4
 d_out = len(vocab.id_to_move.keys())
 model = MultiModalSeven(vocab,d_embed,d_hidden,d_out) 
 model = model.to(device)
 criterion = FocalLoss(gamma=2, alpha=1, reduction='mean')
-lr = 2e-4
+lr = 1e-3
 weight_decay=1e-8
-learn_decay = 0.6 # 
+learn_decay = 0.5 # 
 optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
 def count_parameters(model):
@@ -177,7 +177,7 @@ train_error,train_loss_values, val_error, val_loss_value = train_with_fen(device
                                                                           optimizer, 
                                                                           NUM_EPOCHS, 
                                                                           learn_decay,
-                                                                          '12-white-1500-fourth')
+                                                                          '12-white-1500-second')
 
 
 model.eval()
