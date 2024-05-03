@@ -163,11 +163,9 @@ optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-model.load_state_dict(torch.load('model_images/multimodalmodel-exp-12-white-1500-checkpoint-9.pth'))
+model.load_state_dict(torch.load('model_images/multimodalmodel-exp-12-white-1500-second-checkpoint-3.pth'))
 
 print(count_parameters(model))
-
-model.compile()
 
 train_error,train_loss_values, val_error, val_loss_value = train_with_fen(device, 
                                                                           model, 
